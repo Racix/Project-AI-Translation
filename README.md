@@ -6,6 +6,6 @@ Group has been divided into 3 parts
 * REST API
 * Database
 * Streaming
-### Transciption model
+### Transcription model
 * Whisper
 ### Diarization model
