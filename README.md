@@ -12,4 +12,4 @@ ClaudeHallard, hamidehsani54
 * Whisper
 ### Diarization model
 oskar-dah, langemittbacken, tonytonfisk2
-*NeMo
+* NeMo
