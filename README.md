@@ -2,7 +2,7 @@
 
 ## Friday - 2023-09-15
 Group has been divided into 3 parts
-IsakLundstrom, Racix, Lundsak
+IsakLundstrom, [@username] (https://www.github.com/Racix), Lundsak
 ### Backend
 * REST API
 * Database
