@@ -10,12 +10,14 @@ The current state of the backend:
 * REST API - [@Fast API](https://fastapi.tiangolo.com/) (Python)
 * Database - MongoDB or Cassandra
 * Streaming - Not yet decided.
+  
 ### Transcription model
 [@ClaudeHallard](https://github.com/ClaudeHallard), [@hamidehsani54](https://github.com/hamidehsani54)
 
 The whisper model will be used for transcribing the audio/video files and the following Whisper implementations have been tested:
 * [@WhisperJAX](https://github.com/sanchit-gandhi/whisper-jax)
 * [@faster_whisper](https://github.com/guillaumekln/faster-whisper)
+  
 ### Diarization model
 [@oskar-dah](https://github.com/oskar-dah), [@langemittbacken](https://github.com/langemittbacken), [@tonytonfisk2](https://github.com/tonytonfisk2)
 
