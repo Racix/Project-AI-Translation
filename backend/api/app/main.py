@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, UploadFile, status
 from starlette.responses import FileResponse
 import os
+import pymongo
 
 app = FastAPI()
 
@@ -12,6 +13,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Mock data to store video information
 videos_db = {}
+
+mongoClient = pymongo.MongoClient("mongodb://10.20.0.2:27017/")
+print(mongoClient)
 
 @app.get("/videos")
 async def get_videos():
