@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, UploadFile, status
-from starlette.responses import FileResponse
 import os
 import pymongo
+import app.whisperTest as whisperTest
+from fastapi import FastAPI, HTTPException, UploadFile, status
+from starlette.responses import FileResponse
 from bson.objectid import ObjectId
 
 app = FastAPI()
@@ -18,6 +19,7 @@ mongo_address = os.environ['MONGO_ADDRESS']
 client = pymongo.MongoClient(f"mongodb://{mongo_address}:{mongo_port}/")
 db = client["api"]
 video_col = db["videos"]
+analysis_col = db["analysis"]
 print(client) #TODO print for debug connection 
 
 
@@ -69,7 +71,11 @@ async def start_video_analysis(video_id: str):
     if video_info is None:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    return {"message": "Video analysis not implemented yet", "video_id": video_id}
+    whisper_res = whisperTest.main(video_info['file_path'])
+    whisper_res["video_id"] = video_id
+    mongo_res = analysis_col.insert_one(whisper_res)
+
+    return {"message": "Video analysis done", "analysis_id": mongo_res.inserted_id, "result": whisper_res}
 
 
 @app.get("/videos/{video_id}/analysis")
