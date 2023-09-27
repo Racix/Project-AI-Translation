@@ -2,7 +2,7 @@ import os
 import pymongo
 import app.whisperTest as whisperTest
 from fastapi import FastAPI, HTTPException, UploadFile, status
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, JSONResponse
 from bson.objectid import ObjectId
 
 app = FastAPI()
@@ -67,15 +67,17 @@ async def get_video(video_id: str):
 
 @app.post("/videos/{video_id}/analysis")
 async def start_video_analysis(video_id: str):
+    
     video_info = video_col.find_one({"_id": ObjectId(video_id)})
     if video_info is None:
         raise HTTPException(status_code=404, detail="Video not found")
 
     whisper_res = whisperTest.main(video_info['file_path'])
     whisper_res["video_id"] = video_id
+    print("whisper_res", whisper_res)
     mongo_res = analysis_col.insert_one(whisper_res)
 
-    return {"message": "Video analysis done", "analysis_id": mongo_res.inserted_id, "result": whisper_res}
+    return JSONResponse({"message": "Video analysis done", "analysis_id": str(mongo_res.inserted_id)})
 
 
 @app.get("/videos/{video_id}/analysis")
