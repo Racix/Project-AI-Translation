@@ -6,20 +6,24 @@ from bson.objectid import ObjectId
 
 app = FastAPI()
 
-# Define the directory where video files will be saved
+# Directory where video files will be saved
 UPLOAD_DIR = "/videos"
 
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-mongoClient = pymongo.MongoClient("mongodb://10.20.0.2:27017/")
-db = mongoClient["api"]
-videoCol = db["videos"]
-print(mongoClient)
+# Connect to mongodb
+mongo_port = os.environ['MONGO_PORT']
+mongo_address = os.environ['MONGO_ADDRESS']
+client = pymongo.MongoClient(f"mongodb://{mongo_address}:{mongo_port}/")
+db = client["api"]
+video_col = db["videos"]
+print(client) #TODO print for debug connection 
+
 
 @app.get("/videos")
 async def get_videos():
-    return list(videoCol.find())
+    return list(video_col.find())
 
 
 @app.post("/videos", status_code=status.HTTP_201_CREATED)
@@ -32,34 +36,36 @@ async def upload_video(file: UploadFile):
     with open(file_path, "wb") as video_file:
         video_file.write(file.file.read())
     
+    # Parse data and insert into database
     data = {"name": file.filename, "file_path": file_path}
-    print("DATA:", data)
-    x = videoCol.insert_one(data)
+    res = video_col.insert_one(data)
     
-    return {"message": "Video uploaded successfully", "video_id": str(x.inserted_id)}
+    return {"message": "Video uploaded successfully", "video_id": str(res.inserted_id)}
 
 
 @app.get("/videos/{video_id}")
 async def get_video(video_id: str):
-    video_info = videoCol.find_one({"_id": ObjectId(video_id)})
+    video_info = video_col.find_one({"_id": ObjectId(video_id)})
     if video_info is None:
-        raise HTTPException(status_code=404, detail="Video not found")
+        raise HTTPException(status_code=404, detail=f"Video with id {video_id} was not found")
 
     video_path = video_info["file_path"]
     if not os.path.exists(video_path):
-        raise HTTPException(status_code=404, detail="Video file not found")
+        raise HTTPException(status_code=404, detail=f"The assisiating video file for id {video_id} was not found")
 
     # Return the video file as a response
     return FileResponse(video_info["file_path"], media_type="video/mp4", filename=video_info["name"])
 
 
 # @app.patch("/videos/{video_id}") TODO implement
+
+
 # @app.delete("/videos/{video_id}") TODO implement
 
 
 @app.post("/videos/{video_id}/analysis")
 async def start_video_analysis(video_id: str):
-    video_info = videoCol.find_one({"_id": ObjectId(video_id)})
+    video_info = video_col.find_one({"_id": ObjectId(video_id)})
     if video_info is None:
         raise HTTPException(status_code=404, detail="Video not found")
 
@@ -68,7 +74,7 @@ async def start_video_analysis(video_id: str):
 
 @app.get("/videos/{video_id}/analysis")
 async def get_video_analysis(video_id: str):
-    video_info = videoCol.find_one({"_id": ObjectId(video_id)})
+    video_info = video_col.find_one({"_id": ObjectId(video_id)})
     if video_info is None:
         raise HTTPException(status_code=404, detail="Video not found")
 

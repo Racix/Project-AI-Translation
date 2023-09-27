@@ -1,14 +1,11 @@
-# See https://docs.docker.com/compose/compose-file/ for information about what
-# commands you can use in this file.
-#
-# Note that you must use the `docker stack deploy` command, with any required
-# command line flags, in order to actually get any replicas started. That
-# command requires that a docker swarm is already running in order to function.
-
 version: "3"
 services:
   db:
-    image: mongo:latest # Make sure your Docker image has this name.
+    image: mongo:latest
+    build:
+      context: database
+      dockerfile: Dockerfile
+    command: mongod --port ${MONGO_PORT}
     stdin_open: true
     tty: true
     deploy:
@@ -27,14 +24,20 @@ services:
     #   - "4000:80"
     networks:
       backend_network:
-        ipv4_address: 10.20.0.2
+        ipv4_address: ${MONGO_ADDRESS}
+    env_file:
+      - .env
 
-  backend:
-    image: rest:latest # Make sure your Docker image has this name.
-    stdin_open: true
-    tty: true
+  api:
+    image: api:latest
+    build:
+      context: api
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
     depends_on:
       - db
+    stdin_open: true
+    tty: true
     deploy:
       mode: replicated
       replicas: 1
@@ -48,14 +51,15 @@ services:
         max_attempts: 3
         window: 10s
     ports:
-      - "2000:8080"
+      - "${API_PORT_HOST}:${API_PORT_GUEST}"
     networks:
       - backend_network
-      
+    env_file:
+      - .env
+
 networks:
   backend_network:
-   ipam:
+    ipam:
       driver: default
       config:
-       - subnet: 10.20.0.0/16
-
+        - subnet: ${NETWORK_SUBNET}
