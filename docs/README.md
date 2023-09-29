@@ -1,5 +1,8 @@
 # DoRiS - Diarization of Recordings in Speech-to-text
 
+## Friday - 2023-09-29
+This week has been great but not without challenges. We have implemented a first draft of a backend API using FastAPI with routes to upload a video, save it locally and its information in a MongoDB database. We launch these using docker-compose and two Dockerfiles to make them run in seperate docker containers. Later in the week we started integrating the trascribing model to the backend using FasterWhisper with the large-v2 model. We realized that laptops might not be able to run this so currently we are using our private stationary computer to delevop the backend further (we are currently looking at how we might be able to host and develop on a cluster instead). The diarization have made good progress as well where they have explored combining the result from the whisper model with the result of thier NeMo model to classify the different spekers of a recording. We will (if things go as planned) try and integrate their result to the backend next week.
+
 ## Friday - 2023-09-22
 The first two weeks of working with the project we have divided the project into three parts and from that each sub group studied the topic further and decided which architectures would be used their part. The goal for the first sprint, ending 2023-09-29, is to have a back end up and running with two models that can produce some kind of output, the quality is not that important yet. The project have the following parts:
 
