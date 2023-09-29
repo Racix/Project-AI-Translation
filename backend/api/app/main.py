@@ -1,7 +1,7 @@
 import os
 import pymongo
 import app.whisperTest as whisperTest
-from fastapi import FastAPI, HTTPException, UploadFile, status
+from fastapi import FastAPI, HTTPException, UploadFile, status, BackgroundTasks
 from starlette.responses import FileResponse, JSONResponse
 from bson.objectid import ObjectId
 
@@ -25,7 +25,10 @@ print(client) #TODO print for debug connection
 
 @app.get("/videos")
 async def get_videos():
-    return list(video_col.find())
+    res = list(video_col.find())
+    for row in res:
+        row['_id'] = str(row['_id'])
+    return {"message": res}
 
 
 @app.post("/videos", status_code=status.HTTP_201_CREATED)
@@ -65,28 +68,29 @@ async def get_video(video_id: str):
 # @app.delete("/videos/{video_id}") TODO implement
 
 
-@app.post("/videos/{video_id}/analysis")
-async def start_video_analysis(video_id: str):
-    
+@app.post("/videos/{video_id}/analysis", status_code=status.HTTP_202_ACCEPTED)
+async def start_video_analysis(video_id: str, background_tasks: BackgroundTasks):
     video_info = video_col.find_one({"_id": ObjectId(video_id)})
     if video_info is None:
         raise HTTPException(status_code=404, detail="Video not found")
+    background_tasks.add_task(analyze, video_info, video_id)
+    return {"message": "Video analysis started",}
 
-    whisper_res = whisperTest.main(video_info['file_path'])
-    whisper_res["video_id"] = video_id
-    print("whisper_res", whisper_res)
-    mongo_res = analysis_col.insert_one(whisper_res)
 
-    return JSONResponse({"message": "Video analysis done", "analysis_id": str(mongo_res.inserted_id)})
+def analyze(video_info, video_id):
+    analysis_col.delete_one({"video_id": ObjectId(video_id)})
+    whisper_res = whisperTest.transcribe(video_info['file_path'])
+    whisper_res["video_id"] = ObjectId(video_id)
+    analysis_col.insert_one(whisper_res)
 
 
 @app.get("/videos/{video_id}/analysis")
 async def get_video_analysis(video_id: str):
-    video_info = video_col.find_one({"_id": ObjectId(video_id)})
-    if video_info is None:
+    analysis_info = analysis_col.find_one({"video_id": ObjectId(video_id)}, {"_id":0,"video_id":0})
+    if analysis_info is None:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    return {"message": "Video analysis not implemented yet", "video_id": video_id}
+    return {"message": analysis_info, "video_id": video_id}
 
 
 # @app.delete("/videos/{video_id}/analysis") TODO implement
