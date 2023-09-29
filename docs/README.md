@@ -1,4 +1,4 @@
-# Project-AI-Translation
+# DoRiS - Diarization of Recordings in Speech-to-text
 
 ## Friday - 2023-09-22
 The first two weeks of working with the project we have divided the project into three parts and from that each sub group studied the topic further and decided which architectures would be used their part. The goal for the first sprint, ending 2023-09-29, is to have a back end up and running with two models that can produce some kind of output, the quality is not that important yet. The project have the following parts:
