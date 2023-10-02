@@ -56,6 +56,8 @@ services:
       - backend_network
     env_file:
       - .env
+    volumes:
+      - media:${UPLOAD_DIR}
 
 networks:
   backend_network:
@@ -63,3 +65,6 @@ networks:
       driver: default
       config:
         - subnet: ${NETWORK_SUBNET}
+
+volumes:
+  media:

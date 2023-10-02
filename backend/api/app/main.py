@@ -7,90 +7,85 @@ from bson.objectid import ObjectId
 
 app = FastAPI()
 
-# Directory where video files will be saved
-UPLOAD_DIR = "/videos"
+UPLOAD_DIR = os.environ['UPLOAD_DIR']
 
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Connect to mongodb
-mongo_port = os.environ['MONGO_PORT']
-mongo_address = os.environ['MONGO_ADDRESS']
-client = pymongo.MongoClient(f"mongodb://{mongo_address}:{mongo_port}/")
+client = pymongo.MongoClient(f"mongodb://{os.environ['MONGO_ADDRESS']}:{os.environ['MONGO_PORT']}/")
 db = client["api"]
-video_col = db["videos"]
+media_col = db["media"]
 analysis_col = db["analysis"]
 print(client) #TODO print for debug connection 
 
 
-@app.get("/videos")
-async def get_videos():
-    res = list(video_col.find())
+@app.get("/media")
+async def get_all_media():
+    res = list(media_col.find())
     for row in res:
         row['_id'] = str(row['_id'])
     return {"message": res}
 
 
-@app.post("/videos", status_code=status.HTTP_201_CREATED)
-async def upload_video(file: UploadFile):
+@app.post("/media", status_code=status.HTTP_201_CREATED)
+async def upload_media(file: UploadFile):
 
-    # Generate a unique filename for the uploaded video
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
-    # Save the uploaded video locally
-    with open(file_path, "wb") as video_file:
-        video_file.write(file.file.read())
+    # Save the uploaded media locally
+    with open(file_path, "wb") as media_file:
+        media_file.write(file.file.read())
     
     # Parse data and insert into database
     data = {"name": file.filename, "file_path": file_path}
-    res = video_col.insert_one(data)
+    res = media_col.insert_one(data)
     
-    return {"message": "Video uploaded successfully", "video_id": str(res.inserted_id)}
+    return {"message": "Media file uploaded successfully", "media_id": str(res.inserted_id)}
 
 
-@app.get("/videos/{video_id}")
-async def get_video(video_id: str):
-    video_info = video_col.find_one({"_id": ObjectId(video_id)})
-    if video_info is None:
-        raise HTTPException(status_code=404, detail=f"Video with id {video_id} was not found")
+@app.get("/media/{media_id}")
+async def get_media_by_id(media_id: str):
+    media_info = media_col.find_one({"_id": ObjectId(media_id)})
+    if media_info is None:
+        raise HTTPException(status_code=404, detail=f"Media file with id {media_id} was not found")
 
-    video_path = video_info["file_path"]
-    if not os.path.exists(video_path):
-        raise HTTPException(status_code=404, detail=f"The assisiating video file for id {video_id} was not found")
+    media_path = media_info["file_path"]
+    if not os.path.exists(media_path):
+        raise HTTPException(status_code=404, detail=f"The assisiating media file for id {media_id} was not found")
 
-    # Return the video file as a response
-    return FileResponse(video_info["file_path"], media_type="video/mp4", filename=video_info["name"])
-
-
-# @app.patch("/videos/{video_id}") TODO implement
+    return FileResponse(media_info["file_path"], media_type="media/mp4", filename=media_info["name"])
 
 
-# @app.delete("/videos/{video_id}") TODO implement
+# @app.patch("/media/{media_id}") TODO implement
 
 
-@app.post("/videos/{video_id}/analysis", status_code=status.HTTP_202_ACCEPTED)
-async def start_video_analysis(video_id: str, background_tasks: BackgroundTasks):
-    video_info = video_col.find_one({"_id": ObjectId(video_id)})
-    if video_info is None:
-        raise HTTPException(status_code=404, detail="Video not found")
-    background_tasks.add_task(analyze, video_info, video_id)
-    return {"message": "Video analysis started",}
+# @app.delete("/media/{media_id}") TODO implement
 
 
-def analyze(video_info, video_id):
-    analysis_col.delete_one({"video_id": ObjectId(video_id)})
-    whisper_res = whisperTest.transcribe(video_info['file_path'])
-    whisper_res["video_id"] = ObjectId(video_id)
+@app.post("/media/{media_id}/analysis", status_code=status.HTTP_202_ACCEPTED)
+async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks):
+    media_info = media_col.find_one({"_id": ObjectId(media_id)})
+    if media_info is None:
+        raise HTTPException(status_code=404, detail="Media file not found")
+    background_tasks.add_task(analyze, media_info, media_id)
+    return {"message": "Media file analysis started",}
+
+
+def analyze(media_info, media_id):
+    analysis_col.delete_one({"media_id": ObjectId(media_id)})
+    whisper_res = whisperTest.transcribe(media_info['file_path'])
+    whisper_res["media_id"] = ObjectId(media_id)
     analysis_col.insert_one(whisper_res)
 
 
-@app.get("/videos/{video_id}/analysis")
-async def get_video_analysis(video_id: str):
-    analysis_info = analysis_col.find_one({"video_id": ObjectId(video_id)}, {"_id":0,"video_id":0})
+@app.get("/media/{media_id}/analysis")
+async def get_media_analysis(media_id: str):
+    analysis_info = analysis_col.find_one({"media_id": ObjectId(media_id)}, {"_id":0,"media_id":0})
     if analysis_info is None:
-        raise HTTPException(status_code=404, detail="Video not found")
+        raise HTTPException(status_code=404, detail="Media file not found")
 
-    return {"message": analysis_info, "video_id": video_id}
+    return {"message": analysis_info, "media_id": media_id}
 
 
-# @app.delete("/videos/{video_id}/analysis") TODO implement
+# @app.delete("/media/{media_id}/analysis") TODO implement
