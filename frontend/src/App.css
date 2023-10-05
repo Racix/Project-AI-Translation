@@ -1,0 +1,119 @@
+.App {
+  font-family: 'Arial', sans-serif;
+  padding: 20px;
+  background-color: #f7f8fc;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+h3 {
+  background-color: #007BFF;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: inline-block;
+  margin-right: 5px;
+  text-align: left;
+}
+
+p {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+.time {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.edit-button {
+  background-color: transparent;
+  border: none;
+  color: #007BFF;
+  margin-left: 10px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.3s;
+}
+
+.edit-button:hover {
+  background-color: rgba(0, 123, 255, 0.1);  /* Slight background on hover for better UX */
+}
+
+
+.label-input {
+  margin-left: 10px;
+  border: none;
+  border-bottom: 1px solid #007BFF;
+  outline: none;
+  font-size: 16px;
+  background-color: transparent;
+}
+
+.label-input:focus {
+  border-bottom: 2px solid #007BFF;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  background-color: #007BFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item {
+  color: white;
+  text-decoration: none;
+  margin: 0 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-logo {
+  height: 40px; /* Adjust as needed */
+  margin-right: 20px; /* Space between the logo and the first link */
+}
+
+.home-page-logo {
+  height: 100px; /* Adjust as needed */
+  margin-right: 20px; /* Space between the logo and the first link */
+}
+
+.file-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.file-list li {
+  padding: 8px 12px;
+  margin: 8px 0;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.file-list li:hover {
+  background-color: #f5f5f5;
+}
