@@ -1,11 +1,21 @@
 import os
 import pymongo
-import app.whisperTest as whisperTest
-from fastapi import FastAPI, HTTPException, UploadFile, status, BackgroundTasks
-from starlette.responses import FileResponse, JSONResponse
+import aiohttp
+from fastapi import FastAPI, HTTPException, UploadFile, status, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import FileResponse
 from bson.objectid import ObjectId
+from app.connectionManager import ConnectionManager
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to restrict origins as needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 UPLOAD_DIR = os.environ['UPLOAD_DIR']
 
@@ -18,6 +28,9 @@ db = client["api"]
 media_col = db["media"]
 analysis_col = db["analysis"]
 print(client) #TODO print for debug connection 
+
+# Websocket analysis status manager
+analysisManager = ConnectionManager()
 
 
 @app.get("/media")
@@ -63,20 +76,22 @@ async def get_media_by_id(media_id: str):
 # @app.delete("/media/{media_id}") TODO implement
 
 
-@app.post("/media/{media_id}/analysis", status_code=status.HTTP_202_ACCEPTED)
+@app.post("/media/{media_id}/analysis")
 async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks):
     media_info = media_col.find_one({"_id": ObjectId(media_id)})
     if media_info is None:
         raise HTTPException(status_code=404, detail="Media file not found")
-    background_tasks.add_task(analyze, media_info, media_id)
-    return {"message": "Media file analysis started",}
+
+    background_tasks.add_task(analyze, media_id)
+
+    return {"message": "Media file analysis started"}
 
 
-def analyze(media_info, media_id):
-    analysis_col.delete_one({"media_id": ObjectId(media_id)})
-    whisper_res = whisperTest.transcribe(media_info['file_path'])
-    whisper_res["media_id"] = ObjectId(media_id)
-    analysis_col.insert_one(whisper_res)
+async def analyze(media_id: str):
+    url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe/{media_id}"
+    async with aiohttp.ClientSession() as session:
+        res = await session.post(url)
+        print("res:", res)
 
 
 @app.get("/media/{media_id}/analysis")
@@ -89,3 +104,20 @@ async def get_media_analysis(media_id: str):
 
 
 # @app.delete("/media/{media_id}/analysis") TODO implement
+
+
+@app.websocket("/ws/analysis/{media_id}")
+async def websocket_endpoint(websocket: WebSocket, media_id: int):
+    await analysisManager.connect(websocket)
+    print("websocket connected", websocket.client)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            print("recived data:", data, "from client", websocket.client)
+            data["media_id"] = media_id
+            # await analysisManager.send_personal_message(f"You wrote: {data}", websocket)
+            await analysisManager.broadcast(data)
+    except WebSocketDisconnect:
+        analysisManager.disconnect(websocket)
+        print("websocket disconnected", websocket.client)
+        # await analysisManager.broadcast(f"Client #{client_id} left the chat")    
