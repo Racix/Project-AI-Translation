@@ -12,7 +12,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Adjust this to restrict origins as needed
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -107,7 +107,8 @@ async def get_media_analysis(media_id: str):
 
 
 @app.websocket("/ws/analysis/{media_id}")
-async def websocket_endpoint(websocket: WebSocket, media_id: int):
+async def websocket_endpoint(websocket: WebSocket, media_id: str):
+    print("Hello")
     await analysisManager.connect(websocket)
     print("websocket connected", websocket.client)
     try:
