@@ -1,0 +1,70 @@
+version: "3"
+services:
+  db:
+    image: mongo:latest
+    build:
+      context: database
+      dockerfile: Dockerfile
+    command: mongod --port ${MONGO_PORT}
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      # resources:
+      #   limits:
+      #     cpus: "0.1"
+      #     memory: 50M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    # ports:
+    #   - "4000:80"
+    networks:
+      backend_network:
+        ipv4_address: ${MONGO_ADDRESS}
+    env_file:
+      - .env
+
+  api:
+    image: api:latest
+    build:
+      context: api
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      # resources:
+      #   limits:
+      #     cpus: "0.1"
+      #     memory: 50M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    ports:
+      - "${API_PORT_HOST}:${API_PORT_GUEST}"
+    networks:
+      - backend_network
+    env_file:
+      - .env
+    volumes:
+      - media:${UPLOAD_DIR}
+
+networks:
+  backend_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: ${NETWORK_SUBNET}
+
+volumes:
+  media:
