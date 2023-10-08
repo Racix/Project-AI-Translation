@@ -108,7 +108,7 @@ async def get_media_analysis(media_id: str):
 
 @app.websocket("/ws/analysis/{media_id}")
 async def websocket_endpoint(websocket: WebSocket, media_id: str):
-    print("Hello")
+    print("websocket trying to connect")
     await analysisManager.connect(websocket)
     print("websocket connected", websocket.client)
     try:

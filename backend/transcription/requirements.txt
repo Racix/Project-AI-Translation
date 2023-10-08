@@ -3,4 +3,3 @@ uvicorn==0.23.2
 pymongo==4.5.0
 aiohttp==3.8.5
 faster-whisper==0.9.0
-websockets
