@@ -1,3 +1,21 @@
 fastapi==0.103.2
 uvicorn==0.23.2
 pymongo==4.5.0
+jiwer
+editdistance
+pyannote.metrics
+Cython
+youtokentome
+sentencepiece
+inflect
+webdataset
+librosa
+pyannote.core
+pytorch_lightning
+hydra-core
+git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]
+omegaconf 
+wget
+# torch
+pydub
+ffmpeg

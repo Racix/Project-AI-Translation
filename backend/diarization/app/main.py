@@ -1,3 +1,4 @@
+import app.diarize as diarize
 import os
 import pymongo
 from fastapi import FastAPI, HTTPException, status, BackgroundTasks, Request
@@ -30,6 +31,10 @@ async def diarize_media_file(media_id: str, request: Request, background_tasks: 
 
 def diarize(media_id: str, media_info, transcription):
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
+    y, sr = diarize.preprocess(media_info['file_path'])
+    print(y)
+    print(sr)
+
     diarize_res = transcription # TODO diarize the transcription
     diarize_res["media_id"] = ObjectId(media_id)
     analysis_col.insert_one(transcription)
