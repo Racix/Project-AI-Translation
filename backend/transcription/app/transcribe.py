@@ -1,7 +1,7 @@
 from faster_whisper import WhisperModel
 import time
 
-model_size = "tiny"
+model_size = "large-v2"
 model = WhisperModel(model_size, compute_type="int8")
 
 def transcribe(input_file, speaker_name="Speaker0"):
