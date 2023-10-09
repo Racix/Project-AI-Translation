@@ -16,7 +16,12 @@ import wget
 import sys
 import os
 
-CONFIG_DIR = "/config"
+CONFIG_DIR = "/diarization/config"
+TMP_DIR = "/diarization/tmp_data"
+
+os.makedirs(CONFIG_DIR, exist_ok=True)
+os.makedirs(TMP_DIR, exist_ok=True)
+
 
 # if len(sys.argv) != 2:
 #     print("Usage: python3 NeMo-SpeakerDiarization.py <filename>")
@@ -30,42 +35,46 @@ CONFIG_DIR = "/config"
 # data_dir = "/tf/Project-AI-Translation/diarization/data/"
 # audio_pathfile = data_dir + filename
 # rttm_pathfile = data_dir + filename_without_ext + ".rttm"
-input_manifest_path = "/diarization/input_manifest.json"
+input_manifest_path = CONFIG_DIR + "/input_manifest.json"
 
 def convert_to_wav(file_path, name):
     #Convert audio file to .wav format.
-    # subprocess.call(['ffmpeg', '-i', file_path,
-    #              data_dir+ name+'.wav'])
-    return AudioSegment.from_mp3(file_path) 
+    output_path = os.path.join(TMP_DIR, name) +'.wav'
+    subprocess.call(['ffmpeg', '-i', file_path, output_path])
+    return output_path
+    # print(file_path)
+    # wav = AudioSegment.from_mp3(file_path) 
+    # print(wav)
+    # return wav 
 
 def to_mono(file_path):
     #Convert audio file to mono and 16000hz subsample
     y, sr = librosa.load(file_path, sr=16000, mono=True)
-    # sf.write(audio, y, sr)
-    return y, sr
+    sf.write(file_path, y, sr)
 
 
 def preprocess(file_path):
     name = file_path.split("/")[-1].split(".")[0]
     if file_path.lower().endswith((".mp3", ".mp4")):
-        wav = convert_to_wav(file_path, name)
-        return librosa.to_mono(wav)
+        wav_path = convert_to_wav(file_path, name)
+        to_mono(wav_path)
+        return wav_path
     elif file_path.lower().endswith(".wav"):
-        return to_mono(file_path)
-    else:
-        print("wrong file")
-        return None, None
+        to_mono(file_path)
+        return file_path
+    print("wrong file format")
+    return None
     # audio_path = data_dir + name + '.wav'
     # return audio_path
 
-def configurations(file_path, domain, rttm, speakers):
+def configurations(wav_path, domain, rttm, speakers):
     # Check for GPU availability
     # device = "cuda" if torch.cuda.is_available() else "cpu"
     #Configuration yaml file
     DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
     CONFIG_URL = f"https://raw.githubusercontent.com/NVIDIA/NeMo/main/examples/speaker_tasks/diarization/conf/inference/{CONFIG_FILE_NAME}"
-    if not os.path.exists(os.path.join(CONFIG_DIR,CONFIG_FILE_NAME)):
+    if not os.path.exists(os.path.join(CONFIG_DIR, CONFIG_FILE_NAME)):
         CONFIG = wget.download(CONFIG_URL, CONFIG_DIR)
     else:
         CONFIG = os.path.join(CONFIG_DIR,CONFIG_FILE_NAME)
@@ -75,7 +84,7 @@ def configurations(file_path, domain, rttm, speakers):
     # ROOT = os.getcwd()
     
     meta = {
-        'audio_filepath': file_path,
+        'audio_filepath': wav_path,
         'offset': 0,
         'duration': None,
         'label': 'infer',
@@ -92,7 +101,7 @@ def configurations(file_path, domain, rttm, speakers):
     os.makedirs(output_dir, exist_ok=True)
 
     #Configure yaml file
-    pretrained_speaker_model = "models/titanet-s.nemo"
+    pretrained_speaker_model = "models/titanet-l.nemo"
     pretrained_vad = "models/vad_multilingual_marblenet.nemo"
     pretrained_msdd = "models/diar_msdd_telephonic.nemo"
     config.diarizer.manifest_filepath = input_manifest_path
@@ -122,8 +131,8 @@ def cluster_diarization(config):
     oracle_vad_clusdiar_model.diarize()
 
 def create_diarization(file_path, rttm, speakers):
-    audio_wav, sr = preprocess(file_path)
-    config = configurations(audio_wav, "telephonic", rttm, speakers)
+    wav_path = preprocess(file_path)
+    config = configurations(wav_path, "telephonic", rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)
 

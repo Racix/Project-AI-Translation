@@ -12,9 +12,11 @@ COPY ./requirements.txt /diarization/requirements.txt
 RUN pip install Cython
 RUN pip install --no-cache-dir --upgrade -r /diarization/requirements.txt
 
-RUN unzip vad_multilingual_marblenet_1.10.0.zip -d /models
-RUN unzip titanet_large_v1.zip -d /models
-RUN unzip diar_msdd_telephonic_1.0.1.zip -d /models
+RUN unzip vad_multilingual_marblenet_1.10.0.zip -d /diarization/models
+RUN unzip titanet_large_v1.zip -d /diarization/models
+RUN unzip diar_msdd_telephonic_1.0.1.zip -d /diarization/models
+
+RUN apt-get update && apt-get install -y ffmpeg
 
 COPY ./app /diarization/app
 
