@@ -17,24 +17,11 @@ import sys
 import os
 
 CONFIG_DIR = "/diarization/config"
-TMP_DIR = "/diarization/tmp_data"
+TMP_DIR = "/diarization/tmp"
 
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(TMP_DIR, exist_ok=True)
 
-
-# if len(sys.argv) != 2:
-#     print("Usage: python3 NeMo-SpeakerDiarization.py <filename>")
-#     sys.exit(1)
-
-# filename = sys.argv[1]
-
-# filename_without_ext = filename.split(".")[0]
-# print(f"Processing file: {filename_without_ext}")
-
-# data_dir = "/tf/Project-AI-Translation/diarization/data/"
-# audio_pathfile = data_dir + filename
-# rttm_pathfile = data_dir + filename_without_ext + ".rttm"
 input_manifest_path = CONFIG_DIR + "/input_manifest.json"
 
 def convert_to_wav(file_path, name):
@@ -68,20 +55,15 @@ def preprocess(file_path):
     # return audio_path
 
 def configurations(wav_path, domain, rttm, speakers):
-    # Check for GPU availability
-    # device = "cuda" if torch.cuda.is_available() else "cpu"
-    #Configuration yaml file
+    # Configuration yaml file
     DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
     CONFIG_URL = f"https://raw.githubusercontent.com/NVIDIA/NeMo/main/examples/speaker_tasks/diarization/conf/inference/{CONFIG_FILE_NAME}"
     if not os.path.exists(os.path.join(CONFIG_DIR, CONFIG_FILE_NAME)):
         CONFIG = wget.download(CONFIG_URL, CONFIG_DIR)
     else:
-        CONFIG = os.path.join(CONFIG_DIR,CONFIG_FILE_NAME)
+        CONFIG = os.path.join(CONFIG_DIR, CONFIG_FILE_NAME)
     config = OmegaConf.load(CONFIG)
-    
-    #InputManifest
-    # ROOT = os.getcwd()
     
     meta = {
         'audio_filepath': wav_path,
@@ -94,7 +76,7 @@ def configurations(wav_path, domain, rttm, speakers):
         'uem_filepath': None
     }
 
-    with open(os.path.join(CONFIG_DIR,'input_manifest.json'),'w') as fp:
+    with open(input_manifest_path,'w') as fp:
         json.dump(meta, fp)
         fp.write('\n')
     output_dir = os.path.join(CONFIG_DIR, 'oracle_vad')
@@ -135,9 +117,3 @@ def create_diarization(file_path, rttm, speakers):
     config = configurations(wav_path, "telephonic", rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)
-
-# def main():
-#     create_diarization(audio_pathfile, rttm_pathfile, 2)
-
-# if __name__ == "__main__":
-#     main()

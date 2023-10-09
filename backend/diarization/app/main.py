@@ -1,4 +1,5 @@
 import app.diarize as di
+import app.combine as co
 import os
 import pymongo
 from fastapi import FastAPI, HTTPException, status, BackgroundTasks, Request
@@ -32,9 +33,10 @@ async def diarize_media_file(media_id: str, request: Request, background_tasks: 
 async def diarize(media_id: str, media_info, transcription):
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     di.create_diarization(media_info['file_path'], None, 1)
-    diarize_res = transcription # TODO diarize the transcription
-    diarize_res["media_id"] = ObjectId(media_id)
+    diarization_segments = co.parse_rttm_from_file("/config/oracle_vad/pred_rttms/video.rttm") # TODO fix this, uses name 'video' as test
+    combined_res = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
+    combined_res["media_id"] = ObjectId(media_id)
     analysis_col.insert_one(transcription)
-    print("Diarized transcription:", diarize_res)
+    print("Diarized transcription:", combined_res)
 
     
