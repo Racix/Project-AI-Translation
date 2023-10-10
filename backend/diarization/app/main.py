@@ -25,15 +25,15 @@ async def diarize_media_file(media_id: str, request: Request, background_tasks: 
     if transcription is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body")
 
-    background_tasks.add_task(diarize, media_id, media_info, transcription)
+    background_tasks.add_task(diarize, media_id, media_info['file_path'], transcription)
 
     return {"message": "Diarization of file started"}
 
 
-async def diarize(media_id: str, media_info, transcription):
+async def diarize(media_id: str, file_path: str, transcription: dict):
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
-    di.create_diarization(media_info['file_path'], None, 1)
-    diarization_segments = co.parse_rttm_from_file("/config/oracle_vad/pred_rttms/video.rttm") # TODO fix this, uses name 'video' as test
+    di.create_diarization(file_path, None, 1) # TODO fix later
+    diarization_segments = co.parse_rttm_from_file(file_path) # TODO fix this, uses name 'video' as test
     combined_res = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
     combined_res["media_id"] = ObjectId(media_id)
     analysis_col.insert_one(transcription)

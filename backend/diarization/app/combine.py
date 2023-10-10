@@ -1,15 +1,15 @@
 import json
 import sys
 
-if len(sys.argv) != 2:
-    print("Usage: python3 NeMo-SpeakerDiarization.py <filename>")
-    sys.exit(1)
+# if len(sys.argv) != 2:
+#     print("Usage: python3 NeMo-SpeakerDiarization.py <filename>")
+#     sys.exit(1)
 
-filename = sys.argv[1]
-print(f"Processing file: {filename}")
+# filename = sys.argv[1]
+# print(f"Processing file: {filename}")
 
-data_dir = "/tf/Project-AI-Translation/diarization/data/"
-result_dir = "/tf/Project-AI-Translation/diarization/result/"
+# data_dir = "/tf/Project-AI-Translation/diarization/data/"
+# result_dir = "/tf/Project-AI-Translation/diarization/result/"
 
 # def parse_rttm(rttm_file):
 #     segments = []
@@ -169,9 +169,11 @@ def align_segments_with_overlap_info(transcript_segments, diarization_segments):
     return combined_data
 
 # Adjusting the parse_rttm function to read from a file
-def parse_rttm_from_file(rttm_file):
+def parse_rttm_from_file(file_path):
+    name = file_path.split("/")[-1].split(".")[0]
+    rttm_path = f"/diarization/config/oracle_vad/pred_rttms/{name}.rttm"
     segments = []
-    with open(rttm_file, 'r', encoding="utf-8") as f:
+    with open(rttm_path, 'r', encoding="utf-8") as f:
         for line in f:
             parts = line.strip().split()
             start, duration = float(parts[3]), float(parts[4])
@@ -187,20 +189,20 @@ def parse_rttm_from_file(rttm_file):
 
 
 
-# Paths to the RTTM files and output JSON file
-transcript_file = data_dir + filename + ".rttm"
-diarization_file = data_dir + "oracle_vad/pred_rttms/" + filename + ".rttm"
-output_file = result_dir + filename + ".json"
+# # Paths to the RTTM files and output JSON file
+# transcript_file = data_dir + filename + ".rttm"
+# diarization_file = data_dir + "oracle_vad/pred_rttms/" + filename + ".rttm"
+# output_file = result_dir + filename + ".json"
 
-transcript_segments_file = parse_rttm_from_file(transcript_file)
-diarization_segments_file = parse_rttm_from_file(diarization_file)
+# transcript_segments_file = parse_rttm_from_file(transcript_file)
+# diarization_segments_file = parse_rttm_from_file(diarization_file)
 
-combined_data_file = align_segments_with_overlap_info(transcript_segments_file, diarization_segments_file)
+# combined_data_file = align_segments_with_overlap_info(transcript_segments_file, diarization_segments_file)
 
-# Save the combined data to a JSON file
+# # Save the combined data to a JSON file
 
-with open(output_file, 'w', encoding="utf-8") as f:
-    json.dump(combined_data_file, f, indent=4)
+# with open(output_file, 'w', encoding="utf-8") as f:
+#     json.dump(combined_data_file, f, indent=4)
 
 
 

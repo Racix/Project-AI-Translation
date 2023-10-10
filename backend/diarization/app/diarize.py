@@ -88,6 +88,7 @@ def configurations(wav_path, domain, rttm, speakers):
     pretrained_msdd = "models/diar_msdd_telephonic.nemo"
     config.diarizer.manifest_filepath = input_manifest_path
     # config.device = device
+    config.device = "default"
     config.batch_size = 1
     config.diarizer.out_dir = output_dir # Directory to store intermediate files and prediction outputs
     config.diarizer.speaker_embeddings.model_path = pretrained_speaker_model
