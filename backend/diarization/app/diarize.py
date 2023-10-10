@@ -18,43 +18,43 @@ import os
 
 CONFIG_DIR = "/diarization/config"
 TMP_DIR = "/diarization/tmp"
+OUTPUT_DIR = os.path.join(CONFIG_DIR, 'oracle_vad')
 
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(TMP_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 input_manifest_path = CONFIG_DIR + "/input_manifest.json"
 
-def convert_to_wav(file_path, name):
-    #Convert audio file to .wav format.
-    output_path = os.path.join(TMP_DIR, name) +'.wav'
-    subprocess.call(['ffmpeg', '-i', file_path, output_path])
-    return output_path
-    # print(file_path)
-    # wav = AudioSegment.from_mp3(file_path) 
-    # print(wav)
-    # return wav 
 
-def to_mono(file_path):
-    #Convert audio file to mono and 16000hz subsample
+def convert_to_wav(file_path: str, output_path: str):
+    """Converts audio file to .wav format."""
+    subprocess.call(['ffmpeg', '-hide_banner', '-loglevel warning', '-i', file_path, output_path])
+
+
+def to_mono(file_path: str):
+    """Convert audio file to mono and 16000hz subsample"""
     y, sr = librosa.load(file_path, sr=16000, mono=True)
-    sf.write(file_path, y, sr)
+    sf.write(file_path, y, sr) #TODO maybe not overwrite the original file?
 
 
-def preprocess(file_path):
-    file_name, _ = os.path.splitext(os.path.basename(file_path))
+def preprocess(file_path:str) -> str | None:
+    file_name = os.path.splitext(os.path.basename(file_path))[0] + ".wav"
+    wav_path = os.path.join(TMP_DIR, file_name)
     if file_path.lower().endswith((".mp3", ".mp4")):
-        wav_path = convert_to_wav(file_path, file_name)
-        to_mono(wav_path)
+        convert_to_wav(file_path, wav_path)
         return wav_path
     elif file_path.lower().endswith(".wav"):
-        to_mono(file_path)
-        return file_path
-    print("wrong file format")
-    return None
-    # audio_path = data_dir + name + '.wav'
-    # return audio_path
+        shutil.copyfile(file_path, wav_path)
+    else:
+        print("wrong file format")
+        return None
+    
+    to_mono(wav_path)
+    return file_path
 
-def configurations(wav_path, domain, rttm, speakers):
+
+def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) -> OmegaConf:
     # Configuration yaml file
     DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
@@ -79,8 +79,6 @@ def configurations(wav_path, domain, rttm, speakers):
     with open(input_manifest_path,'w') as fp:
         json.dump(meta, fp)
         fp.write('\n')
-    output_dir = os.path.join(CONFIG_DIR, 'oracle_vad')
-    os.makedirs(output_dir, exist_ok=True)
 
     #Configure yaml file
     pretrained_speaker_model = "models/titanet-l.nemo"
@@ -89,7 +87,7 @@ def configurations(wav_path, domain, rttm, speakers):
     config.diarizer.manifest_filepath = input_manifest_path
     # config.device = device
     config.batch_size = 1
-    config.diarizer.out_dir = output_dir # Directory to store intermediate files and prediction outputs
+    config.diarizer.out_dir = OUTPUT_DIR # Directory to store intermediate files and prediction outputs
     config.diarizer.speaker_embeddings.model_path = pretrained_speaker_model
     config.diarizer.msdd_model.model_path = pretrained_msdd  
     config.diarizer.msdd_model.parameters.sigmoid_threshold = [0.7,1] 
@@ -102,17 +100,20 @@ def configurations(wav_path, domain, rttm, speakers):
     config.diarizer.clustering.parameters.oracle_num_speakers = False
     return config
 
-def msdd_diarization(config):
+
+def msdd_diarization(config: OmegaConf):
     #Multi-scale model
     oracle_vad_msdd_model = NeuralDiarizer(cfg=config)
     oracle_vad_msdd_model.diarize()
-    
-def cluster_diarization(config):
-    #Clustering model
-    oracle_vad_clusdiar_model = ClusteringDiarizer(cfg=config)
-    oracle_vad_clusdiar_model.diarize()
 
-def create_diarization(file_path, rttm, speakers):
+
+# def cluster_diarization(config: OmegaConf):
+#     #Clustering model
+#     oracle_vad_clusdiar_model = ClusteringDiarizer(cfg=config)
+#     oracle_vad_clusdiar_model.diarize()
+
+
+def create_diarization(file_path: str, rttm: str | None, speakers: int):
     wav_path = preprocess(file_path)
     config = configurations(wav_path, "telephonic", rttm, speakers)
     #cluster_diarization(config)

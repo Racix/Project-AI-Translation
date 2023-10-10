@@ -64,7 +64,7 @@ def align_segments_with_overlap_info(transcript_segments: dict, diarization_segm
 # Adjusting the parse_rttm function to read from a file
 def parse_rttm_from_file(file_path: str) -> dict:
     file_name, _ = os.path.splitext(os.path.basename(file_path))
-    rttm_path = f"/diarization/config/oracle_vad/pred_rttms/{file_name}.rttm"
+    rttm_path = f"/diarization/config/oracle_vad/pred_rttms/{file_name}.rttm" # TODO make this nicer
     segments = []
     with open(rttm_path, 'r', encoding="utf-8") as f:
         for line in f:
