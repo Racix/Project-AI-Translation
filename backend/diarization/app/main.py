@@ -33,10 +33,10 @@ async def diarize_media_file(media_id: str, request: Request, background_tasks: 
 async def diarize(media_id: str, file_path: str, transcription: dict):
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     di.create_diarization(file_path, None, 1) # TODO fix later
-    diarization_segments = co.parse_rttm_from_file(file_path) # TODO fix this, uses name 'video' as test
-    combined_res = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
-    combined_res["media_id"] = ObjectId(media_id)
+    diarization_segments = co.parse_rttm_from_file(file_path)
+    transcription['segments'] = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
+    transcription['media_id'] = ObjectId(media_id)
     analysis_col.insert_one(transcription)
-    print("Diarized transcription:", combined_res)
+    print("Diarized transcription:", transcription)
 
     
