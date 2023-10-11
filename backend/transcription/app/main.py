@@ -1,7 +1,7 @@
 import aiohttp
 import os
 import pymongo
-import app.transcribe as transcribe
+import app.transcribe as tr
 from bson.objectid import ObjectId
 from fastapi import FastAPI, HTTPException, status, BackgroundTasks
 
@@ -24,7 +24,7 @@ async def transcribe_media_file(media_id: str, background_tasks: BackgroundTasks
             await send_status(data, media_id, session)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
 
-    background_tasks.add_task(trancribe, media_id, media_info)
+    background_tasks.add_task(transcribe, media_id, media_info)
 
     return {"message": "Trancription of file started"}
 
@@ -35,14 +35,14 @@ async def send_status(data: dict, media_id: str, session):
         await ws.send_json(data)
 
 
-async def trancribe(media_id: str, media_info):
+async def transcribe(media_id: str, media_info):
     async with aiohttp.ClientSession() as session:
         # Notify through websocket transcription started
         data = {"status": status.HTTP_200_OK, "message": "Transcription started..."}
         await send_status(data, media_id, session)
 
         # Transcribe and send result to diarization model
-        trancribe_res = transcribe.transcribe(media_info['file_path'])
+        trancribe_res = tr.transcribe(media_info['file_path'])
         await send_diarization_req(media_id, trancribe_res)
 
         # Notify through websocket transcription finished
