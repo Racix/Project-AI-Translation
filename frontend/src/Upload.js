@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './Upload.css';
+import './styles/Upload.css';
 
 function Upload() {
   const [file, setFile] = useState(null);
@@ -67,7 +67,6 @@ function Upload() {
       console.error('There was an error uploading the file.', error);
     }
   };
-  
   
   return (
     <div className="upload-container">

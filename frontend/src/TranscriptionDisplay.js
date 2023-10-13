@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import './TranscriptionDisplay.css';
-import penIcon from './penIcon.svg';
+import './styles/TranscriptionDisplay.css';
+import penIcon from './img/penIcon.svg';
 
 
 function TranscriptionDisplay() {
