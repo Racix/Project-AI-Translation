@@ -30,16 +30,19 @@ function TranscriptionDisplay() {
   // Fetch the content of a file when clicked
   const fetchFileContent = async (mediaId) => {
     try {
-      const response = await fetch(`http://localhost:8080/media/${mediaId}`);
+      const response = await fetch(`http://localhost:8080/media/${mediaId}/analysis`);
       if (response.ok) {
-        const data = await response.json();
-        setTranscriptionData(data);
+        const data = await response.json();  // First parse the entire JSON response
+        const segments = data.message.segments;  // Then access the required properties
+        console.log(segments)
+        setTranscriptionData(segments);
         setSelectedFile(mediaId);
       }
     } catch (error) {
       console.error('Error fetching file content.', error);
     }
-  };
+};
+
 
 
   const formatTime = (seconds) => {

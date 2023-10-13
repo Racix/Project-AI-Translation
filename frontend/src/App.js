@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import TranscriptionDisplay from './TranscriptionDisplay';
 import Upload from './Upload'
 import './App.css';
-import logo from './Doris_logo_trans.png'
+import logo from './Doris_logo.png'
 
 
 function Navbar() {
