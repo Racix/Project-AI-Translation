@@ -1,9 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Upload.css';
 
 function Upload() {
   const [file, setFile] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState('No file chosen');
+
+  useEffect(() => {
+    const fetchFileList = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/media');
+        if (response.ok) {
+          const data = await response.json();
+          setFileList(data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching file list.', error);
+      }
+    };
+
+    fetchFileList();
+  }, []);
+
+  const processFile = async (mediaId) => {
+    try {
+      const formData = new FormData();
+      const response = await fetch(`http://localhost:8080/media/${mediaId}/analysis`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+      } else {
+        alert('Error uploading file!');
+      }
+    } catch (error) {
+      console.error('Error fetching file content.', error);
+    }
+  };
 
   const onFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -31,6 +66,7 @@ function Upload() {
       console.error('There was an error uploading the file.', error);
     }
   };
+
   return (
     <div className="upload-container">
       <div className="file-input-container">
@@ -54,7 +90,16 @@ function Upload() {
       >
         Upload
       </button>
-      här ska in en lista på alla uppladdade filer som ska kunna proceseras
+      <ul className="file-list">
+        {fileList.map(file => (
+          <li key={file._id}>
+            {file.name}
+            <button onClick={() => processFile(file._id)} className="analyze-button">
+              Analyze
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
