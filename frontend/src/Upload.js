@@ -66,7 +66,6 @@ function Upload() {
       console.error('There was an error uploading the file.', error);
     }
   };
-
   return (
     <div className="upload-container">
       <div className="file-input-container">
