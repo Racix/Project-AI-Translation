@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import './TranscriptionDisplay.css';
 import penIcon from './penIcon.svg';
 
 
@@ -60,7 +60,7 @@ function TranscriptionDisplay() {
   let previousSpeaker = null;
 
   return (
-    <div className="App">
+    <div className="Display">
       
 
       <h1>Transcription App</h1>
@@ -77,35 +77,34 @@ function TranscriptionDisplay() {
         </div>
       )}
 
-      <div>
-        {transcriptionData.map((item, index) => {
-          const currentSpeaker = speakerMap[item.speaker] || item.speaker;
-          const showSpeaker = currentSpeaker !== previousSpeaker;
-          previousSpeaker = currentSpeaker;
-          return (
-            <div key={index} style={{ marginBottom: '30px' }}>
-              {showSpeaker && (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <h3>{currentSpeaker}:</h3>
-                  <button className="edit-button" onClick={() => setEditingSpeaker(item.speaker)}>
-                    <img src={penIcon} alt="Edit" width="16" height="16" />
-                  </button>
+<div>
+  {transcriptionData.map((item, index) => {
+    const currentSpeaker = speakerMap[item.speaker] || item.speaker;
+    const showSpeaker = currentSpeaker !== previousSpeaker;
+    previousSpeaker = currentSpeaker;
+    return (
+      <div key={index} className="transcription-item">
+        {showSpeaker && (
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <h3>{currentSpeaker}:</h3>
+            <button className="edit-button" onClick={() => setEditingSpeaker(item.speaker)}>
+              <img src={penIcon} alt="Edit" width="16" height="16" />
+            </button>
 
-
-                  {editingSpeaker === item.speaker && (
-                    <input
-                      className="label-input"
-                      defaultValue={currentSpeaker}
-                      onBlur={(e) => handleLabelChange(item.speaker, e.target.value)}
-                    />
-                  )}
-                </div>
-              )}
-              <p><span className="time">{formatTime(item.start)}:</span> {item.text}</p>
-            </div>
-          );
-        })}
+            {editingSpeaker === item.speaker && (
+              <input
+                className="label-input"
+                defaultValue={currentSpeaker}
+                onBlur={(e) => handleLabelChange(item.speaker, e.target.value)}
+              />
+            )}
+          </div>
+        )}
+        <p><span className="time">{formatTime(item.start)}:</span> {item.text}</p>
       </div>
+    );
+  })}
+</div>
     </div>
   );
 }

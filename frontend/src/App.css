@@ -71,17 +71,20 @@ p {
 
 .navbar {
   display: flex;
+  align-items: center;  /* Vertically center align items */
   justify-content: space-around;
-  padding: 10px 0;
+  padding: 5px 0;  /* Increase padding to give more vertical space */
   background-color: #007BFF;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-item {
+  display: flex;  /* Make it a flex container */
+  align-items: center;  /* Vertically center align content */
   color: white;
   text-decoration: none;
   margin: 0 10px;
-  padding: 5px 10px;
+  padding: 5px 15px;  /* Increase padding for a more spacious button */
   border-radius: 4px;
   transition: background-color 0.3s;
 }
@@ -91,9 +94,10 @@ p {
 }
 
 .navbar-logo {
-  height: 40px; /* Adjust as needed */
-  margin-right: 20px; /* Space between the logo and the first link */
+  height: 60px;  /* Increase logo size */
+  margin-right: 20px;
 }
+
 
 .home-page-logo {
   height: 100px; /* Adjust as needed */

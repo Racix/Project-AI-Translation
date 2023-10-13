@@ -1,5 +1,12 @@
 # Weekly blog
 
+## Sunday - 2023-10-08
+We in the backend team decided to try and split up the model with the api gate way to enable the models to be ran on different machines if necceary and try and allow for load balancing later on. To handle errors while transcribing and diarizing we implemented a websocket server in the api gateway which the models service send status data to which can be used in the frontend. 
+
+The frontend has been started on using React. We have a simple working example for requesting data from the server but it is not integrated yet to work with all function in the backend. 
+
+The diarization team and the backend team will meet on monday to integrate the NeMo model with the rest of the backend.
+
 ## Friday - 2023-09-29
 This week has been great but not without challenges. We have implemented a first draft of a backend API using FastAPI with routes to upload a video, save it locally and its information in a MongoDB database. We launch these using docker-compose and two Dockerfiles to make them run in seperate docker containers. Later in the week we started integrating the trascribing model to the backend using FasterWhisper with the large-v2 model. We realized that laptops might not be able to run this so currently we are using our private stationary computer to delevop the backend further (we are currently looking at how we might be able to host and develop on a cluster instead). The diarization have made good progress as well where they have explored combining the result from the whisper model with the result of thier NeMo model to classify the different spekers of a recording. We will (if things go as planned) try and integrate their result to the backend next week.
 

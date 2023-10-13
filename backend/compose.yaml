@@ -1,0 +1,116 @@
+version: "3"
+services:
+  api:
+    image: api:latest
+    build:
+      context: api
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    ports:
+      - "${API_PORT_HOST}:${API_PORT_GUEST}"
+    networks:
+      - backend_network
+    env_file:
+      - .env
+    volumes:
+      - media:${UPLOAD_DIR}
+
+  db:
+    image: mongo:latest
+    build:
+      context: database
+      dockerfile: Dockerfile
+    command: mongod --port ${MONGO_PORT}
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    networks:
+      backend_network:
+        ipv4_address: ${MONGO_ADDRESS}
+    env_file:
+      - .env
+
+  transcription:
+    image: transcription:latest
+    build:
+      context: transcription
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    ports:
+      - "${TRANSCRIPTION_PORT_HOST}:${API_PORT_GUEST}"
+    networks:
+      backend_network:
+        ipv4_address: ${TRANSCRIPTION_ADDRESS}
+    env_file:
+      - .env
+    volumes:
+      - media:${UPLOAD_DIR}
+
+  diarization:
+    image: diarization:latest
+    build:
+      context: diarization
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    ports:
+      - "${DIARIZATION_PORT_HOST}:${API_PORT_GUEST}"
+    networks:
+      backend_network:
+        ipv4_address: ${DIARIZATION_ADDRESS}
+    env_file:
+      - .env
+    volumes:
+      - media:${UPLOAD_DIR}
+
+networks:
+  backend_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: ${NETWORK_SUBNET}
+
+volumes:
+  media:
