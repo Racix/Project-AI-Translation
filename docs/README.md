@@ -1,5 +1,13 @@
 # Weekly blog
 
+## Friday - 2023-10-13
+This week, we have decided to make some changes to the system architecture. We are now transitioning to a more efficient microservice architecture, which will make the system more decoupled and easier to understand. Additionally, we have made progress in integrating the diarization service into the entire system.
+
+For the frontend part, work has been put in to ensure that it can call all the currently available API routes.
+
+We have also dedicated time to exploring video pipelining and segmentation. This will prove valuable in handling large videos and addressing potential challenges in live transcription.
+
+
 ## Sunday - 2023-10-08
 We in the backend team decided to try and split up the model with the api gate way to enable the models to be ran on different machines if necceary and try and allow for load balancing later on. To handle errors while transcribing and diarizing we implemented a websocket server in the api gateway which the models service send status data to which can be used in the frontend. 
 
