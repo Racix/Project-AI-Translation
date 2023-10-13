@@ -47,18 +47,19 @@ function Upload() {
 
   const onUpload = async () => {
     if (!file) return;
-
+  
     const formData = new FormData();
     formData.append('file', file);
-
+  
     try {
       const response = await fetch('http://localhost:8080/media', {
         method: 'POST',
         body: formData,
       });
-
+  
       if (response.ok) {
         alert('File uploaded successfully!');
+        window.location.reload();  // Reload the entire page
       } else {
         alert('Error uploading file!');
       }
@@ -66,6 +67,8 @@ function Upload() {
       console.error('There was an error uploading the file.', error);
     }
   };
+  
+  
   return (
     <div className="upload-container">
       <div className="file-input-container">
