@@ -74,8 +74,6 @@ services:
         ipv4_address: ${TRANSCRIPTION_ADDRESS}
     env_file:
       - .env
-    volumes:
-      - media:${UPLOAD_DIR}
 
   diarization:
     image: diarization:latest
@@ -102,8 +100,6 @@ services:
         ipv4_address: ${DIARIZATION_ADDRESS}
     env_file:
       - .env
-    volumes:
-      - media:${UPLOAD_DIR}
 
 networks:
   backend_network:

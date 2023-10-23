@@ -1,42 +1,36 @@
 import app.diarize as di
 import app.combine as co
+import json
 import os
-import pymongo
-from fastapi import FastAPI, HTTPException, status, BackgroundTasks, Request
-from bson.objectid import ObjectId
+from fastapi import FastAPI, HTTPException, status, UploadFile, Form
 
-# Connect to mongodb
-client = pymongo.MongoClient(f"mongodb://{os.environ['MONGO_ADDRESS']}:{os.environ['MONGO_PORT']}/")
-db = client["api"]
-media_col = db["media"]
-analysis_col = db["analysis"]
+TMP_DIR = "/tmp"
+os.makedirs(TMP_DIR, exist_ok=True)
 
 app = FastAPI()
 
 
-@app.post("/diarize/{media_id}", status_code=status.HTTP_202_ACCEPTED)
-async def diarize_media_file(media_id: str, request: Request, background_tasks: BackgroundTasks):
-    media_info = media_col.find_one({"_id": ObjectId(media_id)})
-    if media_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
-    
-    json = await request.json()
-    transcription = json["transcription"]
+@app.post("/diarize", status_code=status.HTTP_201_CREATED)
+async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form(...)):
+    transcription = json.loads(json_data)["transcription"]
     if transcription is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body") # TODO should this be a error?
 
-    background_tasks.add_task(diarize, media_id, media_info['file_path'], transcription)
+    file_path = os.path.join(TMP_DIR, file.filename)
 
-    return {"message": "Diarization of file started"}
+    # Temporary save the uploaded media locally
+    with open(file_path, "wb") as media_file:
+        media_file.write(file.file.read())
 
+    try:
+        di.create_diarization(file_path, None, 1) # TODO fix later
+        diarization_segments = co.parse_rttm_from_file(file_path)
+        transcription['segments'] = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
+    finally:
+        # Remove temp file
+        os.remove(file_path)
 
-async def diarize(media_id: str, file_path: str, transcription: dict):
-    analysis_col.delete_one({"media_id": ObjectId(media_id)})
-    di.create_diarization(file_path, None, 1) # TODO fix later
-    diarization_segments = co.parse_rttm_from_file(file_path)
-    transcription['segments'] = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
-    transcription['media_id'] = ObjectId(media_id)
-    analysis_col.insert_one(transcription)
-    print("Diarized transcription:", transcription)
-
+    return {"diarization": transcription}
     
