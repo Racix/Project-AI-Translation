@@ -1,4 +1,6 @@
 import aiohttp
+import asyncio
+import json
 import os
 import pymongo
 from app.connectionManager import ConnectionManager
@@ -83,16 +85,68 @@ async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks)
     if media_info is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
 
-    background_tasks.add_task(analyze, media_id)
+    background_tasks.add_task(analyze, media_info['file_path'], media_id)
 
     return {"message": "Media file analysis started"}
 
 
-async def analyze(media_id: str):
-    url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe/{media_id}"
-    async with aiohttp.ClientSession() as session:
-        res = await session.post(url)
-        print("res:", res)
+async def analyze(file_path: str, media_id: str):
+    timeout_seconds = 600 #TODO Find a good timeout
+    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+    transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
+    diarize_url = f"http://{os.environ['DIARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/diarize"
+    transcription = {}
+    diarization = {}
+    data = {}
+
+    # Transcribe
+    with open(file_path, 'rb') as file:
+        try:
+            async with aiohttp.ClientSession(timeout=session_timeout) as session:
+                data = {"status": status.HTTP_200_OK, "message": "Transcription started..."}
+                asyncio.create_task(analysisManager.broadcast(data))
+                async with session.post(transcribe_url, data={'file': file}) as response:
+                    if response.status == status.HTTP_201_CREATED:
+                        transcription = await response.json()
+                        data = {"status": status.HTTP_200_OK, "message": "Transcription done."}
+                    else:
+                        data = {"status": response.status, "message": "Transcription error."}
+                        return
+        except TimeoutError as e:
+            print("Error while connecting for transcription:", e)
+            data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Transcription timed out."}
+            return
+        finally:
+            asyncio.create_task(analysisManager.broadcast(data))
+
+    # Diarize
+    with open(file_path, 'rb') as file: 
+        form = aiohttp.FormData()
+        form.add_field('json_data', json.dumps(transcription), content_type='application/json')
+        form.add_field('file', file)
+        try:
+            async with aiohttp.ClientSession(timeout=session_timeout) as session:
+                data = {"status": status.HTTP_200_OK, "message": "Diarization started..."}
+                asyncio.create_task(analysisManager.broadcast(data))
+                async with session.post(diarize_url, data=form) as response:
+                    if response.status == status.HTTP_201_CREATED:
+                        diarization = await response.json()
+                        data = {"status": status.HTTP_200_OK, "message": "Diarization done."}
+                    else:
+                        data = {"status": response.status, "message": "Diarization error."}
+                        return
+        except TimeoutError as e:
+            print("Error while connecting for transcription:", e)
+            data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Diarization timed out."}
+            return
+        finally:
+            asyncio.create_task(analysisManager.broadcast(data))
+
+    analysis_col.delete_one({"media_id": ObjectId(media_id)})
+    diarization['media_id'] = ObjectId(media_id)
+    analysis_col.insert_one(diarization)
+    data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
+    asyncio.create_task(analysisManager.broadcast(data))
 
 
 @app.get("/media/{media_id}/analysis")
