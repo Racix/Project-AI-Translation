@@ -10,11 +10,13 @@ function TranscriptionDisplay() {
   const [speakerMap, setSpeakerMap] = useState({}); 
   const [editingSpeaker, setEditingSpeaker] = useState(null);
 
+  const BASE_URL = process.env.BACKEND_URL;
+
   // Fetch the list of files when the page loads
   useEffect(() => {
     const fetchFileList = async () => {
       try {
-        const response = await fetch('http://localhost:8080/media');
+        const response = await fetch(`${BASE_URL}/media`);
         if (response.ok) {
           const data = await response.json();
           setFileList(data.message);
@@ -30,7 +32,7 @@ function TranscriptionDisplay() {
   // Fetch the content of a file when clicked
   const fetchFileContent = async (mediaId) => {
     try {
-      const response = await fetch(`http://localhost:8080/media/${mediaId}/analysis`);
+      const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`);
       if (response.ok) {
         const data = await response.json();  // First parse the entire JSON response
         const segments = data.message.segments;  // Then access the required properties

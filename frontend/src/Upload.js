@@ -6,10 +6,12 @@ function Upload() {
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState('No file chosen');
 
+  const BASE_URL = process.env.BACKEND_URL;
+
   useEffect(() => {
     const fetchFileList = async () => {
       try {
-        const response = await fetch('http://localhost:8080/media');
+        const response = await fetch(`${BASE_URL}/media`);
         if (response.ok) {
           const data = await response.json();
           setFileList(data.message);
@@ -25,7 +27,7 @@ function Upload() {
   const processFile = async (mediaId) => {
     try {
       const formData = new FormData();
-      const response = await fetch(`http://localhost:8080/media/${mediaId}/analysis`, {
+      const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`, {
         method: 'POST',
         body: formData,
       });
@@ -52,7 +54,7 @@ function Upload() {
     formData.append('file', file);
   
     try {
-      const response = await fetch('http://localhost:8080/media', {
+      const response = await fetch(`${BASE_URL}/media`, {
         method: 'POST',
         body: formData,
       });
