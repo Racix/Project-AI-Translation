@@ -10,7 +10,7 @@ function TranscriptionDisplay() {
   const [speakerMap, setSpeakerMap] = useState({}); 
   const [editingSpeaker, setEditingSpeaker] = useState(null);
 
-  const BASE_URL = process.env.BACKEND_URL;
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch the list of files when the page loads
   useEffect(() => {

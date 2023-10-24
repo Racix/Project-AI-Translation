@@ -5,8 +5,10 @@ function Upload() {
   const [file, setFile] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState('No file chosen');
+  const [data, setData] = useState(null);
 
-  const BASE_URL = process.env.BACKEND_URL;
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL;
+  const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL;
 
   useEffect(() => {
     const fetchFileList = async () => {
@@ -22,24 +24,68 @@ function Upload() {
     };
 
     fetchFileList();
-  }, []);
+  }, [BASE_URL]);
+
+const startAnalysisRequest = async (mediaId) => {
+  try {
+    const formData = new FormData();
+    const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      alert('Error uploading file!');
+    }
+  } catch (error) {
+    console.error('Error fetching file content.', error);
+  }
+}
 
   const processFile = async (mediaId) => {
-    try {
-      const formData = new FormData();
-      const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
+    const ws = new WebSocket(`${WEBSOCKET_URL}/ws/analysis/${mediaId}`);
+
+    ws.onopen = () => {
+      console.log('WebSocket connected!');
+      startAnalysisRequest(mediaId)
+    };
+
+    ws.onmessage = (event) => {
+      const receivedData = JSON.parse(event.data);
+      setData(receivedData);  // Process the received data as needed
+      console.log(receivedData)
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+
+    ws.onclose = (event) => {
+      if (event.wasClean) {
+        console.log('WebSocket closed cleanly');
       } else {
-        alert('Error uploading file!');
+        console.error('WebSocket connection died');
       }
-    } catch (error) {
-      console.error('Error fetching file content.', error);
-    }
+    };
+
+    return () => {
+      ws.close();
+    };
+    
+    // try {
+    //   const formData = new FormData();
+    //   const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`, {
+    //     method: 'POST',
+    //     body: formData,
+    //   });
+    //   if (response.ok) {
+    //     const data = await response.json();
+    //     alert(data.message);
+    //   } else {
+    //     alert('Error uploading file!');
+    //   }
+    // } catch (error) {
+    //   console.error('Error fetching file content.', error);
+    // }
   };
 
   const onFileChange = (event) => {
