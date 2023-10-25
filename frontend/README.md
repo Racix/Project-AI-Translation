@@ -1,5 +1,13 @@
 ## Available Scripts
 
+to build as a docker container
+### `./frontend.sh build`
+
+to run said container
+### `./frontend.sh run`
+
+## Run Locally
+
 To install needed scripts
 
 ### `npm install react-scripts --save`
