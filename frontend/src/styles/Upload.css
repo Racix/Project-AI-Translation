@@ -67,3 +67,8 @@ cursor: pointer;
 margin-left: 10px; /* space from the filename */
 cursor: pointer;
 }
+
+.analyze-button.disabled {
+  background-color: #ccc; /* Grey background */
+  cursor: not-allowed;   /* Change cursor to not-allowed */
+}

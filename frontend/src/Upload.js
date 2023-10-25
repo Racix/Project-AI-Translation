@@ -6,6 +6,7 @@ function Upload() {
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState('No file chosen');
   const [data, setData] = useState(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
   const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL;
@@ -65,32 +66,25 @@ const startAnalysisRequest = async (mediaId) => {
       } else {
         console.error('WebSocket connection died');
       }
+      setIsDisabled(false);
     };
 
     return () => {
       ws.close();
     };
-    
-    // try {
-    //   const formData = new FormData();
-    //   const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`, {
-    //     method: 'POST',
-    //     body: formData,
-    //   });
-    //   if (response.ok) {
-    //     const data = await response.json();
-    //     alert(data.message);
-    //   } else {
-    //     alert('Error uploading file!');
-    //   }
-    // } catch (error) {
-    //   console.error('Error fetching file content.', error);
-    // }
   };
 
   const onFileChange = (event) => {
     setFile(event.target.files[0]);
     setFileName(event.target.files[0] ? event.target.files[0].name : 'No file chosen');
+  };
+
+  const handleClick = (fileId) => {
+    if(isDisabled){
+      return;
+    }
+    setIsDisabled(true);
+    processFile(fileId);
   };
 
   const onUpload = async () => {
@@ -142,8 +136,12 @@ const startAnalysisRequest = async (mediaId) => {
       <ul className="file-list">
         {fileList.map(file => (
           <li key={file._id}>
-            {file.name}
-            <button onClick={() => processFile(file._id)} className="analyze-button">
+            <span className="file-name">{file.name}</span>
+            <button
+              onClick={() => handleClick(file._id)}
+              className={`analyze-button ${isDisabled ? 'disabled' : ''}`}
+              disabled={isDisabled}
+            >
               Analyze
             </button>
           </li>
