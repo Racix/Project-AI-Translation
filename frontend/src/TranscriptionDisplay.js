@@ -35,8 +35,7 @@ function TranscriptionDisplay() {
       const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`);
       if (response.ok) {
         const data = await response.json();  // First parse the entire JSON response
-        const segments = data.message.segments;  // Then access the required properties
-        console.log(segments)
+        const segments = data.message.diarization.segments;  // Then access the required properties
         setTranscriptionData(segments);
         setSelectedFile(mediaId);
       }
@@ -83,7 +82,8 @@ function TranscriptionDisplay() {
       )}
 
 <div>
-  {transcriptionData.map((item, index) => {
+
+  {transcriptionData && transcriptionData.map((item, index) => {
     const currentSpeaker = speakerMap[item.speaker] || item.speaker;
     const showSpeaker = currentSpeaker !== previousSpeaker;
     previousSpeaker = currentSpeaker;
