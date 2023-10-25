@@ -6,6 +6,7 @@ function Upload() {
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState('No file chosen');
   const [data, setData] = useState(null);
+  const [chosenFileID, setChosenFileID] = useState(null);
   const [isDisabled, setIsDisabled] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -54,6 +55,10 @@ const startAnalysisRequest = async (mediaId) => {
       const receivedData = JSON.parse(event.data);
       setData(receivedData);  // Process the received data as needed
       console.log(receivedData)
+      console.log(receivedData.status)
+      if (receivedData.status === 201) {
+        ws.close()
+      }
     };
 
     ws.onerror = (error) => {
@@ -84,6 +89,7 @@ const startAnalysisRequest = async (mediaId) => {
       return;
     }
     setIsDisabled(true);
+    setChosenFileID(fileId);
     processFile(fileId);
   };
 
@@ -137,6 +143,9 @@ const startAnalysisRequest = async (mediaId) => {
         {fileList.map(file => (
           <li key={file._id}>
             <span className="file-name">{file.name}</span>
+            {data && chosenFileID === file._id && (
+              <div className="message-field">{data.message}</div>
+            )}
             <button
               onClick={() => handleClick(file._id)}
               className={`analyze-button ${isDisabled ? 'disabled' : ''}`}
