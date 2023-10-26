@@ -27,7 +27,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def convert_to_wav(file_path: str, output_path: str):
     """Converts audio file to .wav format."""
-    subprocess.call(['ffmpeg', '-hide_banner', '-loglevel warning', '-i', file_path, output_path])
+    subprocess.call(['ffmpeg', '-hide_banner', '-loglevel', 'warning', '-i', file_path, output_path])
 
 
 def to_mono(file_path: str):

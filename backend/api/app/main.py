@@ -62,15 +62,14 @@ async def upload_media(file: UploadFile):
 
 @app.get("/media/{media_id}")
 async def get_media_by_id(media_id: str):
-    media_info = media_col.find_one({"_id": ObjectId(media_id)})
-    if media_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Media file with id {media_id} was not found")
+    # Check if media exists
+    media_info = try_find_media(media_id)
 
     media_path = media_info["file_path"]
     if not os.path.exists(media_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The assisiating media file for id {media_id} was not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The media file for id {media_id} was not found")
 
-    return FileResponse(media_info["file_path"], media_type="media/mp4", filename=media_info["name"])
+    return FileResponse(media_path, filename=media_info["name"])
 
 
 # @app.patch("/media/{media_id}") TODO implement
@@ -81,12 +80,11 @@ async def get_media_by_id(media_id: str):
 
 @app.post("/media/{media_id}/analysis", status_code=status.HTTP_202_ACCEPTED)
 async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks):
-    media_info = media_col.find_one({"_id": ObjectId(media_id)})
-    if media_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
+    # Check if media exists
+    media_info = try_find_media(media_id)
 
+    # Start analysis in the background
     background_tasks.add_task(analyze, media_info['file_path'], media_id)
-
     return {"message": "Media file analysis started"}
 
 
@@ -97,63 +95,75 @@ async def analyze(file_path: str, media_id: str):
     diarize_url = f"http://{os.environ['DIARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/diarize"
     transcription = {}
     diarization = {}
-    data = {}
+    status_data = {}
 
     # Transcribe
-    with open(file_path, 'rb') as file:
-        try:
-            async with aiohttp.ClientSession(timeout=session_timeout) as session:
-                data = {"status": status.HTTP_200_OK, "message": "Transcription started..."}
-                asyncio.create_task(analysisManager.broadcast(data))
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Transcription started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data))
+            with open(file_path, 'rb') as file:
                 async with session.post(transcribe_url, data={'file': file}) as response:
                     if response.status == status.HTTP_201_CREATED:
                         transcription = await response.json()
-                        data = {"status": status.HTTP_200_OK, "message": "Transcription done."}
+                        status_data = {"status": status.HTTP_200_OK, "message": "Transcription done."}
                     else:
-                        data = {"status": response.status, "message": "Transcription error."}
+                        status_data = {"status": response.status, "message": "Transcription error."}
                         return
-        except TimeoutError as e:
-            print("Error while connecting for transcription:", e)
-            data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Transcription timed out."}
-            return
-        finally:
-            asyncio.create_task(analysisManager.broadcast(data))
+    except TimeoutError as e:
+        print("TimeoutError while transcribing:", e)
+        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Transcription timed out."}
+        return
+    except Exception as e:
+        print("Unkonwn error while transcribing:", e)
+        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Transcription error."}
+        return
+    finally:
+        asyncio.create_task(analysisManager.broadcast(status_data))
 
     # Diarize
-    with open(file_path, 'rb') as file: 
-        form = aiohttp.FormData()
-        form.add_field('json_data', json.dumps(transcription), content_type='application/json')
-        form.add_field('file', file)
-        try:
-            async with aiohttp.ClientSession(timeout=session_timeout) as session:
-                data = {"status": status.HTTP_200_OK, "message": "Diarization started..."}
-                asyncio.create_task(analysisManager.broadcast(data))
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Diarization started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data))
+            with open(file_path, 'rb') as file: 
+                form = aiohttp.FormData()
+                form.add_field('json_data', json.dumps(transcription), content_type='application/json')
+                form.add_field('file', file)
                 async with session.post(diarize_url, data=form) as response:
                     if response.status == status.HTTP_201_CREATED:
                         diarization = await response.json()
-                        data = {"status": status.HTTP_200_OK, "message": "Diarization done."}
+                        status_data = {"status": status.HTTP_200_OK, "message": "Diarization done."}
                     else:
-                        data = {"status": response.status, "message": "Diarization error."}
+                        status_data = {"status": response.status, "message": "Diarization error."}
                         return
-        except TimeoutError as e:
-            print("Error while connecting for transcription:", e)
-            data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Diarization timed out."}
-            return
-        finally:
-            asyncio.create_task(analysisManager.broadcast(data))
+    except TimeoutError as e:
+        print("TimeoutError while diarizing:", e)
+        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Diarization timed out."}
+        return
+    except Exception as e:
+        print("Unkonwn error while diarizing:", e)
+        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Diarization error."}
+        return
+    finally:
+        asyncio.create_task(analysisManager.broadcast(status_data))
 
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     diarization['media_id'] = ObjectId(media_id)
     analysis_col.insert_one(diarization)
-    data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
-    asyncio.create_task(analysisManager.broadcast(data))
+    status_data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
+    asyncio.create_task(analysisManager.broadcast(status_data))
 
 
 @app.get("/media/{media_id}/analysis")
 async def get_media_analysis(media_id: str):
+    # Check if media exists
+    try_find_media(media_id)
+
+    # Check if analysis exists
     analysis_info = analysis_col.find_one({"media_id": ObjectId(media_id)}, {"_id": 0, "media_id": 0})
     if analysis_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis not found")
 
     return {"message": analysis_info, "media_id": media_id}
 
@@ -164,15 +174,37 @@ async def get_media_analysis(media_id: str):
 @app.websocket("/ws/analysis/{media_id}")
 async def websocket_endpoint(websocket: WebSocket, media_id: str):
     await analysisManager.connect(websocket)
+
+    # Check if media exists
+    try:
+        media_info = media_col.find_one({"_id": ObjectId(media_id)})
+    except Exception:
+        await websocket.close(code = 4000, reason = "Invalid media id")
+        return
+    if media_info is None:
+        await websocket.close(code = 4040, reason = "Media not found")
+        return
+    
+    # Everything ok -> client listens
     try:
         while True:
-            data = await websocket.receive_json()
-            data["media_id"] = media_id
-            await analysisManager.broadcast(data)
+            # Only here to keep the connection open to allow clients to listen
+            await websocket.receive_json()
     except (WebSocketDisconnect, ConnectionClosedOK):
         pass
     except Exception as e:
         print("Analysis websocket error:", e)
     finally:
-        analysisManager.disconnect(websocket)  
+        analysisManager.disconnect(websocket)
         print(f"Client {websocket.client} disconnected")
+
+
+def try_find_media(media_id: str) -> str:
+    """Help function for http endpoints to check if the media id is valid and media exists"""
+    try:
+        media_info = media_col.find_one({"_id": ObjectId(media_id)})
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
+    if media_info is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
+    return media_info
