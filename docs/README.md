@@ -1,5 +1,15 @@
 # Weekly blog
 
+## Friday - 2023-10-27
+
+During the past two weeks, most of our time has been dedicated to presentations and exams. Nevertheless, progress has been made.
+
+On the backend, we have implemented the new, more microservices-oriented architecture we decided on earlier.
+
+The frontend can now receive responses from the backend via websockets.
+
+Translation functionality should now be operational. Next, we need to transform it into a dedicated translation microservice.
+
 ## Friday - 2023-10-13
 This week, we have decided to make some changes to the system architecture. We are now transitioning to a more efficient microservice architecture, which will make the system more decoupled and easier to understand. Additionally, we have made progress in integrating the diarization service into the entire system.
 
