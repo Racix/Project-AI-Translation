@@ -72,11 +72,14 @@ async def get_media_by_id(media_id: str):
 @app.delete("/media/{media_id}")
 async def delete_media_by_id(media_id: str):
     # Check if media exists
-    try_find_media(media_id)
+    media_info = try_find_media(media_id)
 
     # Delete all data about media_id
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     media_col.delete_one({"_id": ObjectId(media_id)})
+
+    if os.path.exists(media_info['file_path']):
+        os.remove(media_info['file_path'])
 
     return {"message": "Media deleted successfully", "media_id": media_id}
 
