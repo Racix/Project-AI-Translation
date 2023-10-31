@@ -4,13 +4,13 @@ COMPOSE_FILE="docker-compose.yaml"
 
 build_frontend() {
     echo "Building frontend Docker service..."
-    docker-compose  -f $COMPOSE_FILE build frontend --no-cache
+    docker-compose  -f $COMPOSE_FILE build frontend 
 }
 
 run_frontend() {
     echo "Running frontend Docker service..."
     docker-compose down
-    docker-compose -f $COMPOSE_FILE --compatibility up -d frontend --build
+    docker-compose -f $COMPOSE_FILE --compatibility up -d --build frontend 
 }
 
 case "$1" in
