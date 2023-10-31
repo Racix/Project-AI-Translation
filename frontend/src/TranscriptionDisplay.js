@@ -14,6 +14,7 @@ function TranscriptionDisplay() {
 
   // Fetch the list of files when the page loads
   useEffect(() => {
+    console.log(process.env.REACT_APP_BACKEND_URL);
     const fetchFileList = async () => {
       try {
         const response = await fetch(`${BASE_URL}/media`);
@@ -27,7 +28,7 @@ function TranscriptionDisplay() {
     };
 
     fetchFileList();
-  }, []);
+  }, [BASE_URL]);
 
   // Fetch the content of a file when clicked
   const fetchFileContent = async (mediaId) => {

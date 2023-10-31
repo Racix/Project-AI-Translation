@@ -74,7 +74,7 @@ p {
   align-items: center;  /* Vertically center align items */
   justify-content: space-around;
   padding: 5px 0;  /* Increase padding to give more vertical space */
-  background-color: #007BFF;
+  background-color: #ff0004;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 

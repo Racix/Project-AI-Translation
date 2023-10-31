@@ -5,7 +5,6 @@ import Upload from './Upload'
 import './styles/App.css';
 import logo from './img/Doris_logo.png'
 
-
 function Navbar() {
   return (
     <nav className="navbar">
@@ -17,8 +16,8 @@ function Navbar() {
   );
 }
 
-
 function App() {
+  
   return (
     <Router>
       <div className="App">

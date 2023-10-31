@@ -12,8 +12,11 @@ function Upload() {
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
   const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL;
 
+  console.log(process.env.REACT_APP_BACKEND_URL);
+
   useEffect(() => {
     const fetchFileList = async () => {
+      
       try {
         const response = await fetch(`${BASE_URL}/media`);
         if (response.ok) {
