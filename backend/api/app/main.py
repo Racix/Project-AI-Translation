@@ -49,7 +49,7 @@ async def get_all_media():
 @app.post("/media", status_code=status.HTTP_201_CREATED)
 async def upload_media(file: UploadFile):
     if not is_media_file(file):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file format.")
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
