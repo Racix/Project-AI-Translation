@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import json
+import mimetypes
 import os
 import pymongo
 from typing import Any
@@ -47,6 +48,8 @@ async def get_all_media():
 
 @app.post("/media", status_code=status.HTTP_201_CREATED)
 async def upload_media(file: UploadFile):
+    if not is_media_file(file):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file format.")
 
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
@@ -230,6 +233,19 @@ async def analysis_websocket(websocket: WebSocket, media_id: str):
     finally:
         analysisManager.disconnect(websocket, media_id)
         print(f"Client {websocket.client} disconnected")
+
+
+def is_media_file(file: UploadFile):
+    # Allowed media types
+    allowed_media_types = ['audio', 'video']
+    mime_type, _ = mimetypes.guess_type(file.filename)
+    
+    if mime_type:
+        for media_type in allowed_media_types:
+            if mime_type.startswith(media_type + '/'):
+                return True
+
+    return False
 
 
 def try_find_media(media_id: str) -> dict[str, str]:
