@@ -37,3 +37,33 @@
     max-width: 800px;
     margin-bottom: -20px;
   }
+
+
+  .transcription-item .transcription-text {
+    position: relative;
+    padding-right: 30px; /* Adjust as necessary for button size */
+  }
+  
+  .transcription-item .transcription-text .edit-button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    display: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  
+  .transcription-item .transcription-text:hover .edit-button {
+    display: block;
+  }
+  
+.edit-button-style {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
