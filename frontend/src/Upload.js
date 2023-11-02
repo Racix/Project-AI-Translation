@@ -12,21 +12,25 @@ function Upload() {
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
-    const fetchFileList = async () => {
-      
-      try {
-        const response = await fetch(`http://${BASE_URL}/media`);
-        if (response.ok) {
-          const data = await response.json();
-          setFileList(data.message);
-        }
-      } catch (error) {
-        console.error('Error fetching file list.', error);
-      }
-    };
-
     fetchFileList();
   }, [BASE_URL]);
+
+  const fetchFileList = async () => {
+      
+    try {
+      const response = await fetch(`http://${BASE_URL}/media`);
+      if (response.ok) {
+        const data = await response.json();
+        setFileList(data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching file list.', error);
+    }
+  };
+  const handleOperationClick = (operation, mediaId) => {
+    console.log(`Operation: ${operation}, Media ID: ${mediaId}`);
+    // Placeholder for where you'll later add the logic for each operation
+  };
 
 const startAnalysisRequest = async (mediaId) => {
   try {
@@ -78,6 +82,35 @@ const startAnalysisRequest = async (mediaId) => {
       ws.close();
     };
   };
+
+
+  const deleteMedia = async (mediaId) => {
+    try {
+      const response = await fetch(`http://${BASE_URL}/media/${mediaId}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        console.log("File deleted: ", mediaId)
+        fetchFileList()
+      }
+    } catch (error) {
+      console.error('Error deleting file.', error);
+    }
+  }
+
+  const deleteAnalysis = async (mediaId) => {
+    try {
+      const response = await fetch(`http://${BASE_URL}/media/${mediaId}/analysis`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        console.log("Analysis of deleted: ", mediaId)
+        fetchFileList()
+      }
+    } catch (error) {
+      console.error('Error deleting file.', error);
+    }
+  }
 
   const onFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -146,6 +179,18 @@ const startAnalysisRequest = async (mediaId) => {
             {data && chosenFileID === file._id && (
               <div className="message-field">{data.message}</div>
             )}
+              <button
+                onClick={() => deleteMedia(file._id)}
+                className="delete-media-button"
+              >
+                Delete Media
+              </button>
+              <button
+                onClick={() => deleteAnalysis(file._id)}
+                className="delete-analysis-button"
+              >
+                Delete Analysis
+              </button>
             <button
               onClick={() => handleClick(file._id)}
               className={`analyze-button ${isDisabled ? 'disabled' : ''}`}

@@ -80,3 +80,45 @@ cursor: pointer;
   padding: 8px;
   cursor: default;
 }
+
+.delete-media-button,
+.delete-analysis-button,
+.patch-analysis-button {
+  padding: 10px 20px;
+  color: white;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-media-button {
+  background-color: #dc3545; /* Bootstrap danger color for delete */
+}
+
+.delete-analysis-button {
+  background-color: #ffc107; /* Bootstrap warning color for caution */
+}
+
+.patch-analysis-button {
+  background-color: #28a745; /* Bootstrap success color for update */
+}
+
+.delete-media-button:hover,
+.delete-analysis-button:hover,
+.patch-analysis-button:hover {
+  opacity: 0.8;
+}
+
+/* Ensure buttons are not too close to each other */
+.file-operations button:not(:last-child) {
+  margin-right: 10px;
+}
+
+/* Adjust the disabled state for new operation buttons to match the analyze button */
+.delete-media-button:disabled,
+.delete-analysis-button:disabled,
+.patch-analysis-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
