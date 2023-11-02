@@ -34,7 +34,7 @@
     padding: 0px; 
     line-height: 1.3; 
     background-color: #f7f8fc;
-    max-width: 800px;
+    width: 100%;
     margin-bottom: -20px;
   }
 
@@ -67,7 +67,7 @@
     right: 0;
     top: 0;
   }
-.save-button{
+.save-button, .change-label-button{
     padding: 10px 20px;
     background-color: #007BFF;
     color: white;
@@ -76,8 +76,28 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
+.change-label-button{
+    margin-left: 2px;
+}
+
+.save-button:hover, .change-label-button:hover{
+    background-color: #0056b3;
+}
   .text-input, .label-input {
-    width: 100%; /* Use 100% width to fill the container */
+    width: 100%; 
+    padding: 8px; 
+    font-size: 16px; /* Set a readable font size */
+    box-sizing: border-box; /* Include padding and border in width and height */
+    margin-bottom: 10px; /* Add space below the input field */
+    border: 1px solid #ccc; /* A subtle border for the input */
+    border-radius: 4px; /* Slightly rounded corners for aesthetics */
+  }
+  .label-input{
+    width: 50%;
+  }
+  .text-input-label{
+    float: right;
+    width: 30%; /* Use 100% width to fill the container */
     padding: 8px; /* Add some padding for spacing inside the input */
     font-size: 16px; /* Set a readable font size */
     box-sizing: border-box; /* Include padding and border in width and height */
@@ -85,7 +105,6 @@
     border: 1px solid #ccc; /* A subtle border for the input */
     border-radius: 4px; /* Slightly rounded corners for aesthetics */
   }
-  
   /* If using a textarea for multiline text */
   .textarea-input {
     width: 100%;
@@ -98,4 +117,7 @@
     min-height: 100px; /* Minimum height for multiline text */
     resize: vertical; /* Allow only vertical resizing */
   }
-  
+  .speaker-tag{
+    font-weight: bold;
+  margin-right: 10px;
+  }

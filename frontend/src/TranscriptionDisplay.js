@@ -8,16 +8,12 @@ function TranscriptionDisplay() {
   const [transcriptionData, setTranscriptionData] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null); 
   const [speakerMap, setSpeakerMap] = useState({}); 
-  const [editingSpeaker, setEditingSpeaker] = useState(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const [editingIndex, setEditingIndex] = useState(null); 
   const [tempSpeaker, setTempSpeaker] = useState(""); 
   const [tempText, setTempText] = useState(""); 
   const [editingSegmentIndex, setEditingSegmentIndex] = useState(null);
-
-  const [editingLabelIndex, setEditingLabelIndex] = useState(null); // Track the index of the label being edited
-  const [tempLabel, setTempLabel] = useState(""); // Temporarily store the new label during editing
 
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -61,7 +57,7 @@ const uploadTranscriptionEdits = async (mediaId) => {
   console.log(JSON.stringify(payload))
   try {
     const response = await fetch(`http://${BASE_URL}/media/${mediaId}/analysis`, {
-      method: 'PATCH', // or 'POST' if you are creating a new entry
+      method: 'PUT', // or 'POST' if you are creating a new entry
       headers: {
         'Content-Type': 'application/json',
       },
@@ -95,7 +91,7 @@ const startEditingBlock = (index, speaker, text) => {
 const saveText = (index) => {
   // Save the text to your state or backend
   const updatedTranscriptionData = [...transcriptionData];
-  updatedTranscriptionData[index] = { ...updatedTranscriptionData[index], text: tempText };
+  updatedTranscriptionData[index] = { ...updatedTranscriptionData[index], text: tempText, speaker: tempSpeaker};
   setTranscriptionData(updatedTranscriptionData);
   setEditingIndex(null);
 };
@@ -125,8 +121,6 @@ const handleChangeAllSpeakerLabelsConfirm = () => {
     setEditingSegmentIndex(null); // Exit editing mode after updating all labels
   }
 };
-
-
 
   const formatTime = (seconds) => {
     const roundedSeconds = Math.round(seconds);
@@ -184,7 +178,7 @@ const handleChangeAllSpeakerLabelsConfirm = () => {
               <button className="change-label-button" onClick={() => handleChangeCurrentSpeakerLabelConfirm()}>
                 Change this label
               </button>
-              <button className="change-all-labels-button" onClick={() => handleChangeAllSpeakerLabelsConfirm(tempSpeaker)}>
+              <button className="change-label-button" onClick={() => handleChangeAllSpeakerLabelsConfirm(tempSpeaker)}>
                 Change all labels
               </button>
             </> 
@@ -199,12 +193,23 @@ const handleChangeAllSpeakerLabelsConfirm = () => {
     <span className="time">{formatTime(item.start)}:</span>
     
     {editingIndex === index ? (
+      <>
       <input
         className="text-input"
         value={tempText}
         onChange={(e) => setTempText(e.target.value)}
-        onBlur={() => saveText(index)}
+        onKeyDown={(e) => e.key=='Enter' && saveText(index)}
       />
+      <div className='speaker-tag'>speaker: </div>
+      
+      <input
+                className="text-input-label"
+                value={tempSpeaker}
+                onChange={(e) => setTempSpeaker(e.target.value)}
+
+                onKeyDown={(e) => e.key=='Enter' && saveText(index)}
+              />    
+      </>
     ) : (
       <span>{item.text}</span>
     )}
