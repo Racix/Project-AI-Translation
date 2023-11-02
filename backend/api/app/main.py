@@ -1,11 +1,13 @@
 import aiohttp
 import asyncio
 import json
+import mimetypes
 import os
 import pymongo
+from typing import Any
 from app.connectionManager import ConnectionManager
 from bson.objectid import ObjectId
-from fastapi import FastAPI, HTTPException, UploadFile, status, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, UploadFile, Body, status, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
 from websockets.exceptions import ConnectionClosedOK
@@ -46,6 +48,8 @@ async def get_all_media():
 
 @app.post("/media", status_code=status.HTTP_201_CREATED)
 async def upload_media(file: UploadFile):
+    if not is_media_file(file):
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
@@ -65,23 +69,32 @@ async def get_media_by_id(media_id: str):
     # Check if media exists
     media_info = try_find_media(media_id)
 
-    media_path = media_info["file_path"]
-    if not os.path.exists(media_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The media file for id {media_id} was not found")
-
-    return FileResponse(media_path, filename=media_info["name"])
+    return FileResponse(media_info['file_path'], filename=media_info["name"])
 
 
-# @app.patch("/media/{media_id}") TODO implement
+@app.delete("/media/{media_id}")
+async def delete_media_by_id(media_id: str):
+    # Check if media exists
+    media_info = try_find_media(media_id)
 
+    # Delete all data about media_id
+    analysis_col.delete_one({"media_id": ObjectId(media_id)})
+    media_col.delete_one({"_id": ObjectId(media_id)})
 
-# @app.delete("/media/{media_id}") TODO implement
+    if os.path.exists(media_info['file_path']):
+        os.remove(media_info['file_path'])
+
+    return {"message": "Media deleted successfully", "media_id": media_id}
 
 
 @app.post("/media/{media_id}/analysis", status_code=status.HTTP_202_ACCEPTED)
 async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks):
     # Check if media exists
     media_info = try_find_media(media_id)
+
+    analysis_info = analysis_col.find_one({"media_id": ObjectId(media_id)})
+    if analysis_info is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Analysis already exists. To re-analze, delete the existing analysis.")
 
     # Start analysis in the background
     background_tasks.add_task(analyze, media_info['file_path'], media_id)
@@ -151,28 +164,45 @@ async def analyze(file_path: str, media_id: str):
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     diarization['media_id'] = ObjectId(media_id)
     analysis_col.insert_one(diarization)
+
     status_data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
 
 @app.get("/media/{media_id}/analysis")
 async def get_media_analysis(media_id: str):
-    # Check if media exists
+    # Check if media and analysis exists
     try_find_media(media_id)
+    analysis_info = try_find_analysis(media_id)
 
-    # Check if analysis exists
-    analysis_info = analysis_col.find_one({"media_id": ObjectId(media_id)}, {"_id": 0, "media_id": 0})
-    if analysis_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis not found")
-
-    return {"message": analysis_info, "media_id": media_id}
+    return {"message": analysis_info}
 
 
-# @app.delete("/media/{media_id}/analysis") TODO implement
+@app.put("/media/{media_id}/analysis")
+async def update_media_analysis(media_id: str, segments: Any = Body(...)):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+
+    analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": segments})
+    analysis_info = try_find_analysis(media_id)
+
+    return {"message": analysis_info}
+
+
+@app.delete("/media/{media_id}/analysis")
+async def delete_media_analysis(media_id: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+
+    analysis_col.delete_one({"media_id": ObjectId(media_id)})
+
+    return {"message": "Analysis deleted successfully", "media_id": media_id}
 
 
 @app.websocket("/ws/analysis/{media_id}")
-async def websocket_endpoint(websocket: WebSocket, media_id: str):
+async def analysis_websocket(websocket: WebSocket, media_id: str):
     await analysisManager.connect(websocket, media_id)
 
     # Check if media exists
@@ -183,7 +213,11 @@ async def websocket_endpoint(websocket: WebSocket, media_id: str):
         analysisManager.disconnect(websocket, media_id)
         return
     if media_info is None:
-        await websocket.close(code = 4040, reason = "Media not found")
+        await websocket.close(code = 4040, reason = "Media info not found")
+        analysisManager.disconnect(websocket, media_id)
+        return
+    if not os.path.exists(media_info["file_path"]):
+        await websocket.close(code = 4040, reason = "Media file not found")
         analysisManager.disconnect(websocket, media_id)
         return
     
@@ -201,12 +235,43 @@ async def websocket_endpoint(websocket: WebSocket, media_id: str):
         print(f"Client {websocket.client} disconnected")
 
 
-def try_find_media(media_id: str) -> str:
+def is_media_file(file: UploadFile):
+    # Allowed media types
+    allowed_media_types = ['audio', 'video']
+    mime_type, _ = mimetypes.guess_type(file.filename)
+    
+    if mime_type:
+        for media_type in allowed_media_types:
+            if mime_type.startswith(media_type + '/'):
+                return True
+
+    return False
+
+
+def try_find_media(media_id: str) -> dict[str, str]:
     """Help function for http endpoints to check if the media id is valid and media exists"""
     try:
         media_info = media_col.find_one({"_id": ObjectId(media_id)})
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
     if media_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media file not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media info not found")
+    if not os.path.exists(media_info["file_path"]):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Media file not found")
+    
+    media_info['_id'] = str(media_info['_id'])
     return media_info
+
+
+def try_find_analysis(media_id: str) -> dict[str, str]:
+    """Help function for http endpoints to check if the analysis exists"""
+    try:
+        analysis_info = analysis_col.find_one({"media_id": ObjectId(media_id)})
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
+    if analysis_info is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis not found")
+    
+    analysis_info['_id'] = str(analysis_info['_id'])
+    analysis_info['media_id'] = str(analysis_info['media_id'])
+    return analysis_info

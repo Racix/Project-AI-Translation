@@ -5,6 +5,7 @@ model_size = "tiny"
 model = WhisperModel(model_size, compute_type="int8")
 
 def transcribe(file_path: str) -> dict:
+    print(f"Transcription of {file_path} started...")
     start_time = time.time() # TODO only for time print, remove later
     segments, info = model.transcribe(file_path, beam_size=5)
     transcription_segments = []
@@ -22,6 +23,5 @@ def transcribe(file_path: str) -> dict:
     # TODO only for time print, remove later
     end_time = time.time() 
     total_time = end_time - start_time
-    print("Transcribe time: " + str(total_time) + " seconds")
-
+    print(f"Transcription of {file_path} finished. Total time: {str(total_time)}")
     return result_dict
