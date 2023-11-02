@@ -17,7 +17,7 @@ function TranscriptionDisplay() {
     console.log(process.env.REACT_APP_BACKEND_URL);
     const fetchFileList = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/media`);
+        const response = await fetch(`http://${BASE_URL}/media`);
         if (response.ok) {
           const data = await response.json();
           setFileList(data.message);
@@ -33,7 +33,7 @@ function TranscriptionDisplay() {
   // Fetch the content of a file when clicked
   const fetchFileContent = async (mediaId) => {
     try {
-      const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`);
+      const response = await fetch(`http://${BASE_URL}/media/${mediaId}/analysis`);
       if (response.ok) {
         const data = await response.json();  // First parse the entire JSON response
         const segments = data.message.diarization.segments;  // Then access the required properties

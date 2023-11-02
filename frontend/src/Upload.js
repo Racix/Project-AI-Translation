@@ -10,13 +10,12 @@ function Upload() {
   const [isDisabled, setIsDisabled] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
-  const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL;
 
   useEffect(() => {
     const fetchFileList = async () => {
       
       try {
-        const response = await fetch(`${BASE_URL}/media`);
+        const response = await fetch(`http://${BASE_URL}/media`);
         if (response.ok) {
           const data = await response.json();
           setFileList(data.message);
@@ -32,7 +31,7 @@ function Upload() {
 const startAnalysisRequest = async (mediaId) => {
   try {
     const formData = new FormData();
-    const response = await fetch(`${BASE_URL}/media/${mediaId}/analysis`, {
+    const response = await fetch(`http://${BASE_URL}/media/${mediaId}/analysis`, {
       method: 'POST',
       body: formData,
     });
@@ -45,7 +44,7 @@ const startAnalysisRequest = async (mediaId) => {
 }
 
   const processFile = async (mediaId) => {
-    const ws = new WebSocket(`${WEBSOCKET_URL}/ws/analysis/${mediaId}`);
+    const ws = new WebSocket(`ws://${BASE_URL}/ws/analysis/${mediaId}`);
 
     ws.onopen = () => {
       console.log('WebSocket connected!');
@@ -101,7 +100,7 @@ const startAnalysisRequest = async (mediaId) => {
     formData.append('file', file);
   
     try {
-      const response = await fetch(`${BASE_URL}/media`, {
+      const response = await fetch(`http://${BASE_URL}/media`, {
         method: 'POST',
         body: formData,
       });
