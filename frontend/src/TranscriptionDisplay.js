@@ -14,6 +14,7 @@ function TranscriptionDisplay() {
   const [editingIndex, setEditingIndex] = useState(null); 
   const [tempSpeaker, setTempSpeaker] = useState(""); 
   const [tempText, setTempText] = useState(""); 
+  const [editingSegmentIndex, setEditingSegmentIndex] = useState(null);
 
   const [editingLabelIndex, setEditingLabelIndex] = useState(null); // Track the index of the label being edited
   const [tempLabel, setTempLabel] = useState(""); // Temporarily store the new label during editing
@@ -80,6 +81,12 @@ const uploadTranscriptionEdits = async (mediaId) => {
 };
 
 const startEditing = (index, speaker, text) => {
+  setEditingSegmentIndex(index); // Set the index of the segment being edited
+  setTempSpeaker(speaker);
+  setTempText(text);
+};
+
+const startEditingBlock = (index, speaker, text) => {
   setEditingIndex(index);
   setTempSpeaker(speaker);
   setTempText(text);
@@ -94,24 +101,32 @@ const saveText = (index) => {
 };
 
 const handleChangeCurrentSpeakerLabelConfirm = () => {
-  const updatedTranscriptionData = transcriptionData.map((segment) => {
-    if (segment.speaker === editingSpeaker) {
-      return { ...segment, speaker: tempSpeaker };
-    }
-    return segment;
-  });
-  setTranscriptionData(updatedTranscriptionData);
-  setEditingSpeaker(null); // Exit editing mode
+  if (tempSpeaker.trim()) {
+    const updatedTranscriptionData = transcriptionData.map((segment, index) => {
+      if (index === editingSegmentIndex) {
+        return { ...segment, speaker: tempSpeaker };
+      }
+      return segment;
+    });
+    setTranscriptionData(updatedTranscriptionData);
+    setEditingSegmentIndex(null); // Exit editing mode after updating the map
+  }
 };
 
-const handleChangeAllSpeakerLabelsConfirm = (index, newLabel) => {
-  setTranscriptionData(prevTranscriptionData =>
-    prevTranscriptionData.map((segment, currentIndex) =>
-      currentIndex === index ? { ...segment, speaker: newLabel } : segment
-    )
-  );
-  setEditingSpeaker(null); // Exit editing mode
+const handleChangeAllSpeakerLabelsConfirm = () => {
+  if (tempSpeaker.trim()) {
+    const updatedTranscriptionData = transcriptionData.map(segment => {
+      if (segment.speaker === transcriptionData[editingSegmentIndex].speaker) {
+        return { ...segment, speaker: tempSpeaker };
+      }
+      return segment;
+    });
+    setTranscriptionData(updatedTranscriptionData);
+    setEditingSegmentIndex(null); // Exit editing mode after updating all labels
+  }
 };
+
+
 
   const formatTime = (seconds) => {
     const roundedSeconds = Math.round(seconds);
@@ -119,27 +134,6 @@ const handleChangeAllSpeakerLabelsConfirm = (index, newLabel) => {
     const remainingSeconds = (roundedSeconds % 60).toString().padStart(2, '0');
     return `${minutes}.${remainingSeconds}`;
   };
-
-  const handleLabelChange = (originalSpeaker, newLabel) => {
-    setSpeakerMap(prevState => ({
-      ...prevState,
-      [originalSpeaker]: newLabel
-    }));
-    setEditingSpeaker(null); // Close the input after editing
-  };
-
-  const startEditingLabel = (index, currentLabel) => {
-    setEditingLabelIndex(index);
-    setTempLabel(currentLabel); // Set the current label to the temporary state
-  };
-  
-  const changeLabel = (index) => {
-    setTranscriptionData(prevData => prevData.map((item, idx) =>
-      idx === index ? { ...item, speaker: tempLabel } : item
-    ));
-    setEditingLabelIndex(null); // Exit label editing mode
-  };
-
   
   let previousSpeaker = null;
 
@@ -177,24 +171,24 @@ const handleChangeAllSpeakerLabelsConfirm = (index, newLabel) => {
         {showSpeaker && (
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <h3>{currentSpeaker}:</h3>
-            <button className="edit-button" onClick={() => setEditingSpeaker(item.speaker)}>
+            <button className="edit-button" onClick={() => startEditing(index, item.speaker, item.text)}>
               <img src={penIcon} alt="Edit" width="16" height="16" />
             </button>
-            {editingSpeaker === item.speaker && (
-              <>
+            {editingSegmentIndex === index && (
+            <>
               <input
                 className="label-input"
-                defaultValue={currentSpeaker}
-                onBlur={(e) => handleLabelChange(item.speaker, e.target.value)}
+                value={tempSpeaker}
+                onChange={(e) => setTempSpeaker(e.target.value)}
               />
-               <button className="change-label-button" onClick={() => handleChangeCurrentSpeakerLabelConfirm(index, tempSpeaker)}>
-          Change this label
-        </button>
-        <button className="change-all-labels-button" onClick={() => handleChangeAllSpeakerLabelsConfirm()}>
-          Change all labels
-        </button>
-              </> 
-            )}
+              <button className="change-label-button" onClick={() => handleChangeCurrentSpeakerLabelConfirm()}>
+                Change this label
+              </button>
+              <button className="change-all-labels-button" onClick={() => handleChangeAllSpeakerLabelsConfirm(tempSpeaker)}>
+                Change all labels
+              </button>
+            </> 
+          )}
           </div>
         )}
         <p className="transcription-text"
@@ -217,7 +211,7 @@ const handleChangeAllSpeakerLabelsConfirm = (index, newLabel) => {
     {hoveredIndex === index && editingIndex !== index && (
       <button 
         className="edit-button-style" 
-        onClick={() => startEditing(index, item.speaker, item.text)}
+        onClick={() => startEditingBlock(index, item.speaker, item.text)}
       >
         <img src={penIcon} alt="Edit" width="16" height="16" />
       </button>
