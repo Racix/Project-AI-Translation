@@ -1,5 +1,5 @@
 .App {
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
   padding: 20px;
   background-color: #f7f8fc;
   max-width: 1200px;
@@ -13,7 +13,7 @@ h1 {
 }
 
 h3 {
-  background-color: #007BFF;
+  background-color: #007bff;
   color: #fff;
   padding: 5px 10px;
   border-radius: 5px;
@@ -41,7 +41,7 @@ p {
 .edit-button {
   background-color: transparent;
   border: none;
-  color: #007BFF;
+  color: #007bff;
   margin-left: 10px;
   cursor: pointer;
   padding: 5px;
@@ -52,39 +52,43 @@ p {
 }
 
 .edit-button:hover {
-  background-color: rgba(0, 123, 255, 0.1);  /* Slight background on hover for better UX */
+  background-color: rgba(
+    0,
+    123,
+    255,
+    0.1
+  ); /* Slight background on hover for better UX */
 }
-
 
 .label-input {
   margin-left: 10px;
   border: none;
-  border-bottom: 1px solid #007BFF;
+  border-bottom: 1px solid #007bff;
   outline: none;
   font-size: 16px;
   background-color: transparent;
 }
 
 .label-input:focus {
-  border-bottom: 2px solid #007BFF;
+  border-bottom: 2px solid #007bff;
 }
 
 .navbar {
   display: flex;
-  align-items: center;  /* Vertically center align items */
+  align-items: center; /* Vertically center align items */
   justify-content: space-around;
-  padding: 5px 0;  /* Increase padding to give more vertical space */
-  background-color: #007BFF;
+  padding: 5px 0; /* Increase padding to give more vertical space */
+  background-color: #007bff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-item {
-  display: flex;  /* Make it a flex container */
-  align-items: center;  /* Vertically center align content */
+  display: flex; /* Make it a flex container */
+  align-items: center; /* Vertically center align content */
   color: white;
   text-decoration: none;
   margin: 0 10px;
-  padding: 5px 15px;  /* Increase padding for a more spacious button */
+  padding: 5px 15px; /* Increase padding for a more spacious button */
   border-radius: 4px;
   transition: background-color 0.3s;
 }
@@ -94,10 +98,9 @@ p {
 }
 
 .navbar-logo {
-  height: 60px;  /* Increase logo size */
+  height: 60px; /* Increase logo size */
   margin-right: 20px;
 }
-
 
 .home-page-logo {
   height: 100px; /* Adjust as needed */

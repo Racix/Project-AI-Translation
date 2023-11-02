@@ -30,7 +30,7 @@ function App() {
               <img src={logo} alt="Logo" className="home-page-logo" />
             </>
           } />
-          <Route path="/display" element={<TranscriptionDisplay />} />
+          <Route path="/display/:id" element={<TranscriptionDisplay />} />
           <Route path="/upload" element={<Upload />}/>
 
         </Routes>

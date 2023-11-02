@@ -23,9 +23,10 @@
   border: 1px solid #ddd;
 }
 
-.upload-button, .analyze-button {
+.upload-button,
+.analyze-button {
   padding: 10px 20px;
-  background-color: #007BFF;
+  background-color: #007bff;
   color: white;
   border-radius: 4px;
   border: none;
@@ -33,48 +34,49 @@
   transition: background-color 0.2s;
 }
 
-.upload-button:hover, .analyze-button:hover {
+.upload-button:hover,
+.analyze-button:hover {
   background-color: #0056b3;
 }
 
 .file-list {
-list-style-type: none;
-padding: 0;
+  list-style-type: none;
+  padding: 0;
 }
 
 .file-list li {
-padding: 8px 12px;
-margin: 8px 0;
-display: flex; /* make it a flex container */
-justify-content: space-between; /* space out the items */
-align-items: center; /* align items vertically */
-border: 1px solid #ccc;
-border-radius: 4px;
-transition: background-color 0.2s;
+  padding: 8px 12px;
+  margin: 8px 0;
+  display: flex; /* make it a flex container */
+  justify-content: space-between; /* space out the items */
+  align-items: center; /* align items vertically */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
 .file-list li:hover {
-background-color: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 /* Ensure that only the list item area (excluding the button) gets the hover effect */
 .file-list li > span {
-flex-grow: 1; /* takes up the remaining space */
-cursor: pointer;
+  flex-grow: 1; /* takes up the remaining space */
+  cursor: pointer;
 }
 
 .analyze-button {
-margin-left: 10px; /* space from the filename */
-cursor: pointer;
+  margin-left: 10px; /* space from the filename */
+  cursor: pointer;
 }
 
 .analyze-button.disabled {
   background-color: #ccc; /* Grey background */
-  cursor: not-allowed;   /* Change cursor to not-allowed */
+  cursor: not-allowed; /* Change cursor to not-allowed */
 }
 
 .message-field {
-  background-color:#007BFF;
+  background-color: #007bff;
   color: white;
   border: 2px;
   padding: 8px;
