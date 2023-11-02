@@ -5,11 +5,17 @@ function Upload() {
   const [file, setFile] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState('No file chosen');
+  const [data, setData] = useState(null);
+  const [chosenFileID, setChosenFileID] = useState(null);
+  const [isDisabled, setIsDisabled] = useState(false);
+
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const fetchFileList = async () => {
+      
       try {
-        const response = await fetch('http://localhost:8080/media');
+        const response = await fetch(`http://${BASE_URL}/media`);
         if (response.ok) {
           const data = await response.json();
           setFileList(data.message);
@@ -20,29 +26,71 @@ function Upload() {
     };
 
     fetchFileList();
-  }, []);
+  }, [BASE_URL]);
+
+const startAnalysisRequest = async (mediaId) => {
+  try {
+    const formData = new FormData();
+    const response = await fetch(`http://${BASE_URL}/media/${mediaId}/analysis`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      alert('Error uploading file!');
+    }
+  } catch (error) {
+    console.error('Error fetching file content.', error);
+  }
+}
 
   const processFile = async (mediaId) => {
-    try {
-      const formData = new FormData();
-      const response = await fetch(`http://localhost:8080/media/${mediaId}/analysis`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
-      } else {
-        alert('Error uploading file!');
+    const ws = new WebSocket(`ws://${BASE_URL}/ws/analysis/${mediaId}`);
+
+    ws.onopen = () => {
+      console.log('WebSocket connected!');
+      startAnalysisRequest(mediaId)
+    };
+
+    ws.onmessage = (event) => {
+      const receivedData = JSON.parse(event.data);
+      setData(receivedData);  // Process the received data as needed
+      console.log(receivedData)
+      console.log(receivedData.status)
+      if (receivedData.status === 201) {
+        ws.close()
       }
-    } catch (error) {
-      console.error('Error fetching file content.', error);
-    }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+
+    ws.onclose = (event) => {
+      if (event.wasClean) {
+        console.log('WebSocket closed cleanly');
+      } else {
+        console.error('WebSocket connection died');
+      }
+      setIsDisabled(false);
+    };
+
+    return () => {
+      ws.close();
+    };
   };
 
   const onFileChange = (event) => {
     setFile(event.target.files[0]);
     setFileName(event.target.files[0] ? event.target.files[0].name : 'No file chosen');
+  };
+
+  const handleClick = (fileId) => {
+    if(isDisabled){
+      return;
+    }
+    setIsDisabled(true);
+    setChosenFileID(fileId);
+    processFile(fileId);
   };
 
   const onUpload = async () => {
@@ -52,7 +100,7 @@ function Upload() {
     formData.append('file', file);
   
     try {
-      const response = await fetch('http://localhost:8080/media', {
+      const response = await fetch(`http://${BASE_URL}/media`, {
         method: 'POST',
         body: formData,
       });
@@ -94,8 +142,15 @@ function Upload() {
       <ul className="file-list">
         {fileList.map(file => (
           <li key={file._id}>
-            {file.name}
-            <button onClick={() => processFile(file._id)} className="analyze-button">
+            <span className="file-name">{file.name}</span>
+            {data && chosenFileID === file._id && (
+              <div className="message-field">{data.message}</div>
+            )}
+            <button
+              onClick={() => handleClick(file._id)}
+              className={`analyze-button ${isDisabled ? 'disabled' : ''}`}
+              disabled={isDisabled}
+            >
               Analyze
             </button>
           </li>

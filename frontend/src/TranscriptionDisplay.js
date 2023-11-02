@@ -10,11 +10,14 @@ function TranscriptionDisplay() {
   const [speakerMap, setSpeakerMap] = useState({}); 
   const [editingSpeaker, setEditingSpeaker] = useState(null);
 
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL;
+
   // Fetch the list of files when the page loads
   useEffect(() => {
+    console.log(process.env.REACT_APP_BACKEND_URL);
     const fetchFileList = async () => {
       try {
-        const response = await fetch('http://localhost:8080/media');
+        const response = await fetch(`http://${BASE_URL}/media`);
         if (response.ok) {
           const data = await response.json();
           setFileList(data.message);
@@ -25,16 +28,15 @@ function TranscriptionDisplay() {
     };
 
     fetchFileList();
-  }, []);
+  }, [BASE_URL]);
 
   // Fetch the content of a file when clicked
   const fetchFileContent = async (mediaId) => {
     try {
-      const response = await fetch(`http://localhost:8080/media/${mediaId}/analysis`);
+      const response = await fetch(`http://${BASE_URL}/media/${mediaId}/analysis`);
       if (response.ok) {
         const data = await response.json();  // First parse the entire JSON response
-        const segments = data.message.segments;  // Then access the required properties
-        console.log(segments)
+        const segments = data.message.diarization.segments;  // Then access the required properties
         setTranscriptionData(segments);
         setSelectedFile(mediaId);
       }
@@ -81,7 +83,8 @@ function TranscriptionDisplay() {
       )}
 
 <div>
-  {transcriptionData.map((item, index) => {
+
+  {transcriptionData && transcriptionData.map((item, index) => {
     const currentSpeaker = speakerMap[item.speaker] || item.speaker;
     const showSpeaker = currentSpeaker !== previousSpeaker;
     previousSpeaker = currentSpeaker;

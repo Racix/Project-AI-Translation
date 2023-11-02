@@ -67,3 +67,16 @@ cursor: pointer;
 margin-left: 10px; /* space from the filename */
 cursor: pointer;
 }
+
+.analyze-button.disabled {
+  background-color: #ccc; /* Grey background */
+  cursor: not-allowed;   /* Change cursor to not-allowed */
+}
+
+.message-field {
+  background-color:#007BFF;
+  color: white;
+  border: 2px;
+  padding: 8px;
+  cursor: default;
+}
