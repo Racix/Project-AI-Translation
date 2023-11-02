@@ -178,13 +178,13 @@ async def get_media_analysis(media_id: str):
     return {"message": analysis_info}
 
 
-@app.patch("/media/{media_id}/analysis")
-async def update_media_analysis(media_id: str, patch_data: Any = Body(...)):
+@app.put("/media/{media_id}/analysis")
+async def update_media_analysis(media_id: str, segments: Any = Body(...)):
     # Check if media and analysis exists
     try_find_media(media_id)
     try_find_analysis(media_id)
 
-    analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": patch_data})
+    analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": segments})
     analysis_info = try_find_analysis(media_id)
 
     return {"message": analysis_info}
