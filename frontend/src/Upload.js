@@ -28,7 +28,7 @@ function Upload() {
     }
   };
 
-  const startAnalysisRequest = async (mediaId) => {
+  const startAnalysisRequest = async (mediaId, ws) => {
     try {
       const formData = new FormData();
       const response = await fetch(
@@ -39,10 +39,12 @@ function Upload() {
         }
       );
       if (!response.ok) {
-        alert("Error uploading file!");
+        alert("could not start analysis (if it exists, it needs to be deleted before a new analysis can be done)");
+        ws.close() 
       }
     } catch (error) {
       console.error("Error fetching file content.", error);
+      ws.close()
     }
   };
 
@@ -52,7 +54,7 @@ function Upload() {
     ws.onopen = () => {
       console.log("WebSocket connected!");
       setIsDisabled(true);
-      startAnalysisRequest(mediaId);
+      startAnalysisRequest(mediaId, ws);
     };
 
     ws.onmessage = (event) => {
@@ -60,13 +62,14 @@ function Upload() {
       setData(receivedData); // Process the received data as needed
       console.log(receivedData);
       console.log(receivedData.status);
-      if (receivedData.status === 201) {
+      if (receivedData.status !== 200) {
         ws.close();
       }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket Error:", error);
+      ws.close();
     };
 
     ws.onclose = (event) => {
