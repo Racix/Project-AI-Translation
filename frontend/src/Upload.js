@@ -51,6 +51,7 @@ function Upload() {
 
     ws.onopen = () => {
       console.log("WebSocket connected!");
+      setIsDisabled(true);
       startAnalysisRequest(mediaId);
     };
 
@@ -124,7 +125,6 @@ function Upload() {
     if (isDisabled) {
       return;
     }
-    setIsDisabled(true);
     setChosenFileID(fileId);
     processFile(fileId);
   };
@@ -181,25 +181,27 @@ function Upload() {
             {data && chosenFileID === file._id && (
               <div className="message-field">{data.message}</div>
             )}
-            <button
-              onClick={() => deleteMedia(file._id)}
-              className="delete-media-button"
-            >
-              Delete Media
-            </button>
-            <button
-              onClick={() => deleteAnalysis(file._id)}
-              className="delete-analysis-button"
-            >
-              Delete Analysis
-            </button>
-            <button
-              onClick={() => handleClick(file._id)}
-              className={`analyze-button ${isDisabled ? "disabled" : ""}`}
-              disabled={isDisabled}
-            >
-              Analyze
-            </button>
+            <div className="upload-page-buttons-container">
+              <button
+                onClick={() => deleteMedia(file._id)}
+                className="delete-media-button"
+              >
+                Delete Media
+              </button>
+              <button
+                onClick={() => deleteAnalysis(file._id)}
+                className="delete-analysis-button"
+              >
+                Delete Analysis
+              </button>
+              <button
+                onClick={() => handleClick(file._id)}
+                className={`analyze-button ${isDisabled ? "disabled" : ""}`}
+                disabled={isDisabled}
+              >
+                Analyze
+              </button>
+            </div>
           </li>
         ))}
       </ul>

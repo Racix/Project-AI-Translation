@@ -65,6 +65,22 @@
   cursor: pointer;
 }
 
+.file-name {
+  text-decoration: none; /* Remove underline */
+  color: #007BFF;
+  font-weight: 600;
+  transition: color 0.2s;
+  margin-right: 5px;
+  white-space: nowrap;
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  max-width: 400px; 
+}
+
+.file-name:hover {
+  color: #0056b3;
+}
+
 .analyze-button {
   margin-left: 10px; /* space from the filename */
   cursor: pointer;
@@ -123,4 +139,9 @@
 .patch-analysis-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.upload-page-buttons-container {
+  display: flex;
+  justify-content: flex-end;
 }

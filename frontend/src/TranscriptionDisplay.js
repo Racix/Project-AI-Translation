@@ -66,20 +66,26 @@ function TranscriptionDisplay() {
     }
   };
 
-  const startEditing = (index, speaker, text) => {
+  const unfocusEditingBlocks = () => {
+    setEditingSegmentIndex(null)
+    setEditingIndex(null)
+
+  }
+
+  const startEditing = (index, speaker) => {
+    unfocusEditingBlocks();
     setEditingSegmentIndex(index); // Set the index of the segment being edited
     setTempSpeaker(speaker);
-    setTempText(text);
   };
 
   const startEditingBlock = (index, speaker, text) => {
+    unfocusEditingBlocks();
     setEditingIndex(index);
     setTempSpeaker(speaker);
     setTempText(text);
   };
 
   const saveText = (index) => {
-    // Save the text to your state or backend
     const updatedTranscriptionData = [...transcriptionData];
     updatedTranscriptionData[index] = {
       ...updatedTranscriptionData[index],
@@ -154,7 +160,7 @@ function TranscriptionDisplay() {
                     <button
                       className="edit-button"
                       onClick={() =>
-                        startEditing(index, item.speaker, item.text)
+                        startEditing(index, item.speaker)
                       }
                     >
                       <img src={penIcon} alt="Edit" width="16" height="16" />
@@ -165,6 +171,7 @@ function TranscriptionDisplay() {
                           className="label-input"
                           value={tempSpeaker}
                           onChange={(e) => setTempSpeaker(e.target.value)}
+                        
                         />
                         <button
                           className="change-label-button"
@@ -199,7 +206,10 @@ function TranscriptionDisplay() {
                         className="text-input"
                         value={tempText}
                         onChange={(e) => setTempText(e.target.value)}
-                        onKeyDown={(e) => e.key == "Enter" && saveText(index)}
+                        onKeyDown={(e) => 
+                          ((e.key == "Enter") && saveText(index)) ||
+                            e.key == "Escape" && unfocusEditingBlocks()
+                                  }
                       />
                       <div className="speaker-tag">speaker: </div>
 
@@ -207,7 +217,10 @@ function TranscriptionDisplay() {
                         className="text-input-label"
                         value={tempSpeaker}
                         onChange={(e) => setTempSpeaker(e.target.value)}
-                        onKeyDown={(e) => e.key == "Enter" && saveText(index)}
+                        onKeyDown={(e) => 
+                          ((e.key == "Enter") && saveText(index)) ||
+                            e.key == "Escape" && unfocusEditingBlocks()
+                                  }  
                       />
                     </>
                   ) : (
