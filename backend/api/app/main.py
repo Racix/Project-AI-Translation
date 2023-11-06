@@ -32,6 +32,7 @@ client = pymongo.MongoClient(f"mongodb://{os.environ['MONGO_ADDRESS']}:{os.envir
 db = client["api"]
 media_col = db["media"]
 analysis_col = db["analysis"]
+translate_col = db["translation"]
 print(client) #TODO print for debug connection 
 
 # Websocket analysis status manager
@@ -168,6 +169,79 @@ async def analyze(file_path: str, media_id: str):
     status_data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
+
+@app.post("/media/{media_id}/analysis/translate/{language}")
+async def start_translation(media_id: str, language: str, background_tasks: BackgroundTasks):
+    # Check if media exists
+    media_info = try_find_media(media_id)
+    background_tasks.add_task(translate_analysis, media_id, language)
+    return {"message": "Media file translation started"}
+
+
+
+async def translate_analysis(media_id: str, language: str):
+    timeout_seconds = 600 #TODO Find a good timeout
+    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+    translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
+    translation = {}
+    status_data = {}
+    #print(language)
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Translation started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+            json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
+            print(json_analysis)
+            json_analysis['_id'] = str(json_analysis['_id'])
+            json_analysis['media_id'] = str(json_analysis['media_id'])
+            async with session.post(translate_url, json=json_analysis) as response:
+                if response.status == status.HTTP_201_CREATED:
+                    translation = await response.json()
+                    status_data = {"status": status.HTTP_200_OK, "message": "Translation done."}
+                else:
+                    status_data = {"status": response.status, "message": "Translation error."}
+                    return
+    except TimeoutError as e:
+        print("TimeoutError while translation:", e)
+        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Translation timed out."}
+        return
+    except Exception as e:
+        print("Unkonwn error while translation:", e)
+        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Translation error."}
+        return
+    finally:
+        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
+    translation_col.insert_one(translation)
+    translation['media_id'] = ObjectId(media_id)
+    translation['language'] = language
+
+    status_data = {"status": status.HTTP_201_CREATED, "message": "Translation done."}
+    asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
+# Should be based on language
+@app.get("/media/{media_id}/translation")
+async def get_analysis_translation(media_id: str):
+    # Check if media and translation exists
+    try_find_media(media_id)
+    translation_info = try_find_translation(media_id)
+
+    return {"message": analysis_info}
+
+def try_find_translation(media_id: str) -> dict[str, str]:
+    """Help function for http endpoints to check if the analysis exists"""
+    try:
+        # find translations with the right language TODO
+        translation_info = translation_col.find_one({"media_id": ObjectId(media_id)})
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
+    if translation_info is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Translation not found")
+    
+
+    translation_info['_id'] = str(translation_info['_id'])
+    translation_info['media_id'] = str(translation_info['media_id'])
+    return translation_info
 
 @app.get("/media/{media_id}/analysis")
 async def get_media_analysis(media_id: str):

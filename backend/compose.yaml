@@ -101,6 +101,32 @@ services:
     env_file:
       - .env
 
+  translation:
+    image: translation:latest
+    build:
+      context: translation
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    ports:
+      - "${TRANSLATION_PORT_HOST}:${API_PORT_GUEST}"
+    networks:
+      backend_network:
+        ipv4_address: ${TRANSLATION_ADDRESS}
+    env_file:
+      - .env
+
 networks:
   backend_network:
     ipam:
