@@ -8,13 +8,13 @@ translate_model1 = "facebook/nllb-200-distilled-600M"
 # translate_model4 = "facebook/nllb-200-distilled-1.3B"
 
 
-def translate_to_swedish(data: dict) -> dict:
+def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
 
     model = AutoModelForSeq2SeqLM.from_pretrained(translate_model1)
     tokenizer = AutoTokenizer.from_pretrained(translate_model1)
-    target_lang = "swe_Latn"
+    #target_lang = "swe_Latn"
     translator = pipeline(
-        "translation", model=model, tokenizer=tokenizer, src_lang="eng_Latn", tgt_lang=target_lang, max_length = 400
+        "translation", model=model, tokenizer=tokenizer, src_lang=from_language, tgt_lang=to_language, max_length = 400
         )
     
     translated_data = []

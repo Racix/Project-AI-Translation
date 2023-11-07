@@ -169,17 +169,15 @@ async def analyze(file_path: str, media_id: str):
     status_data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-
-@app.post("/media/{media_id}/analysis/translate/{language}")
-async def start_translation(media_id: str, language: str, background_tasks: BackgroundTasks):
+# TRANSLATE
+@app.post("/media/{media_id}/analysis/translate/{from_language}/{to_language}")
+async def start_translation(media_id: str, from_language: str, to_language: str, background_tasks: BackgroundTasks):
     # Check if media exists
     media_info = try_find_media(media_id)
-    background_tasks.add_task(translate_analysis, media_id, language)
+    background_tasks.add_task(translate_analysis, media_id, from_language, to_language)
     return {"message": "Media file translation started"}
 
-
-
-async def translate_analysis(media_id: str, language: str):
+async def translate_analysis(media_id: str, from_language: str, to_language: str):
     timeout_seconds = 600 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
@@ -194,7 +192,7 @@ async def translate_analysis(media_id: str, language: str):
             print(json_analysis)
             json_analysis['_id'] = str(json_analysis['_id'])
             json_analysis['media_id'] = str(json_analysis['media_id'])
-            async with session.post(translate_url, json=json_analysis) as response:
+            async with session.post(translate_url, json=json_analysis, params={"from_language": from_language, "to_language": to_language}) as response:
                 if response.status == status.HTTP_201_CREATED:
                     translation = await response.json()
                     status_data = {"status": status.HTTP_200_OK, "message": "Translation done."}
@@ -213,26 +211,25 @@ async def translate_analysis(media_id: str, language: str):
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
     translation['media_id'] = ObjectId(media_id)
-    translation['language'] = language
+    translation['language'] = to_language
     translate_col.insert_one(translation)
 
     status_data = {"status": status.HTTP_201_CREATED, "message": "Translation done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
 # Should be based on language
-@app.get("/media/{media_id}/translation")
-async def get_analysis_translation(media_id: str):
+@app.get("/media/{media_id}/translation/{language}")
+async def get_analysis_translation(media_id: str, language: str):
     # Check if media and translation exists
     try_find_media(media_id)
-    translation_info = try_find_translation(media_id)
+    translation_info = try_find_translation(media_id, language)
 
     return {"message": translation_info}
 
-def try_find_translation(media_id: str) -> dict[str, str]:
+def try_find_translation(media_id: str, language: str) -> dict[str, str]:
     """Help function for http endpoints to check if the analysis exists"""
     try:
-        # find translations with the right language TODO
-        translation_info = translate_col.find_one({"media_id": ObjectId(media_id)})
+        translation_info = translate_col.find_one({"media_id": ObjectId(media_id), "language": language})
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
     if translation_info is None:
