@@ -212,9 +212,9 @@ async def translate_analysis(media_id: str, language: str):
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-    translation_col.insert_one(translation)
     translation['media_id'] = ObjectId(media_id)
     translation['language'] = language
+    translate_col.insert_one(translation)
 
     status_data = {"status": status.HTTP_201_CREATED, "message": "Translation done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
@@ -226,13 +226,13 @@ async def get_analysis_translation(media_id: str):
     try_find_media(media_id)
     translation_info = try_find_translation(media_id)
 
-    return {"message": analysis_info}
+    return {"message": translation_info}
 
 def try_find_translation(media_id: str) -> dict[str, str]:
     """Help function for http endpoints to check if the analysis exists"""
     try:
         # find translations with the right language TODO
-        translation_info = translation_col.find_one({"media_id": ObjectId(media_id)})
+        translation_info = translate_col.find_one({"media_id": ObjectId(media_id)})
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
     if translation_info is None:
