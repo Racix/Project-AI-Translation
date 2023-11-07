@@ -1,5 +1,6 @@
 import app.diarize as di
 import app.combine as co
+import app.util as ut
 import json
 import os
 from fastapi import FastAPI, HTTPException, status, UploadFile, Form
@@ -8,7 +9,6 @@ TMP_DIR = "/tmp"
 os.makedirs(TMP_DIR, exist_ok=True)
 
 app = FastAPI()
-
 
 @app.post("/diarize", status_code=status.HTTP_201_CREATED)
 async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form(...)):
@@ -29,7 +29,9 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:
-        # Remove temp file
+        # Remove temp files
+        os.remove(ut.get_rttm_path(ut.get_file_name(file_path)))
+        os.remove(ut.get_wav_path(ut.get_file_name(file_path)))
         os.remove(file_path)
 
     return {"diarization": transcription}
