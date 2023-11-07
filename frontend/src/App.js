@@ -11,7 +11,6 @@ function Navbar() {
       <img src={logo} alt="Logo" className="navbar-logo" />
       <Link to="/" className="nav-item">Home</Link>
       <Link to="/upload" className="nav-item">Upload & Process</Link>
-      <Link to="/display" className="nav-item">Transcription Display</Link>
     </nav>
   );
 }
@@ -30,7 +29,7 @@ function App() {
               <img src={logo} alt="Logo" className="home-page-logo" />
             </>
           } />
-          <Route path="/display" element={<TranscriptionDisplay />} />
+          <Route path="/display/:id" element={<TranscriptionDisplay />} />
           <Route path="/upload" element={<Upload />}/>
 
         </Routes>
