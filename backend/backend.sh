@@ -5,13 +5,13 @@ COMPOSE_FILE="compose.yaml"
 build_services() {
     if [ $# -eq 0 ]; then
         echo "Building all docker services"
-        docker compose -f $COMPOSE_FILE build
+        docker-compose -f $COMPOSE_FILE build
         return
     fi
 
     for service in "$@"; do
         echo "Building Docker service: $service"
-        docker compose -f $COMPOSE_FILE build $service
+        docker-compose -f $COMPOSE_FILE build $service
     done
 }
 

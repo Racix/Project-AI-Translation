@@ -178,12 +178,11 @@ async def start_translation(media_id: str, from_language: str, to_language: str,
     return {"message": "Media file translation started"}
 
 async def translate_analysis(media_id: str, from_language: str, to_language: str):
-    timeout_seconds = 600 #TODO Find a good timeout
+    timeout_seconds = 600 
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
     translation = {}
     status_data = {}
-    #print(language)
     try:
         async with aiohttp.ClientSession(timeout=session_timeout) as session:
             status_data = {"status": status.HTTP_200_OK, "message": "Translation started..."}
@@ -217,10 +216,9 @@ async def translate_analysis(media_id: str, from_language: str, to_language: str
     status_data = {"status": status.HTTP_201_CREATED, "message": "Translation done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-# Should be based on language
+
 @app.get("/media/{media_id}/translation/{language}")
 async def get_analysis_translation(media_id: str, language: str):
-    # Check if media and translation exists
     try_find_media(media_id)
     translation_info = try_find_translation(media_id, language)
 
