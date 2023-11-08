@@ -1,0 +1,4 @@
+# Ignore python enviroments
+.env
+
+__pycache__/
