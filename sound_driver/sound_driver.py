@@ -8,12 +8,9 @@ import asyncio
 from send_audio import send_audio
 
 # https://github.com/s0d3s/PyAudioWPatch/blob/master/examples/pawp_record_wasapi_loopback.py
-def combineStreamData(data1, data2):
-    return np.frombuffer(data1, dtype=FORMAT) + np.frombuffer(data2, dtype=FORMAT)
+
 # Set the audio parameters
 FORMAT = pyaudio.paInt16
-CHANNELS = 1
-SPEAKER_RATE = 48000
 CHUNK = 512
 RECORD_SECONDS = 5  # You can adjust the recording duration as needed
 OUTPUT_FILENAME = "test.wav"
@@ -41,45 +38,46 @@ if not default_speakers["isLoopbackDevice"]:
             print("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
             exit()
 
+print(default_speakers["maxInputChannels"], default_speakers["defaultSampleRate"])
+print(default_mic["maxInputChannels"], default_mic["defaultSampleRate"])
+
+# number of channels to be higher or equalt to the max amount of channels or else weird stuff happend to the audio quality
+n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
+
 speaker_file = wave.open(OUTPUT_FILENAME, 'wb')
-speaker_file.setnchannels(default_speakers["maxInputChannels"])
+speaker_file.setnchannels(n_channels)
 speaker_file.setsampwidth(SAMPLE_SIZE)
 speaker_file.setframerate(int(default_speakers["defaultSampleRate"]))   
-            
-print("Recording...")
-
+   
 speaker_stream = audio.open(format=FORMAT,
-    channels=default_speakers["maxInputChannels"],
+    channels=n_channels,
     rate=int(default_speakers["defaultSampleRate"]),
     frames_per_buffer=CHUNK,
     input=True,
     input_device_index=default_speakers["index"],
  )
 
-# mic_stream = audio.open(format=FORMAT, channels=CHANNELS,
-#                        rate=SPEAKER_RATE, input=True,
-#                        frames_per_buffer=CHUNK)
+mic_stream = audio.open(format=FORMAT, channels=n_channels,
+                       rate=int(default_mic["defaultSampleRate"]), input=True,
+                       frames_per_buffer=CHUNK)
 
+print("Recording...")
 
-for i in range(0, int(SPEAKER_RATE / CHUNK * RECORD_SECONDS)):
+for i in range(0, int(default_speakers["defaultSampleRate"] / CHUNK * RECORD_SECONDS)):
     """Record audio step-by-step"""
     speaker_data = speaker_stream.read(CHUNK)
-    # mic_data = mic_stream.read(CHUNK)
+    mic_data = mic_stream.read(CHUNK)
 
     speaker_data = np.frombuffer(speaker_data, dtype=np.int16)
-    # mic_data = np.frombuffer(mic_data, dtype=np.int16)
-    if voice_activity(speaker_data):
-        speaker_file.writeframes(speaker_data)
+    mic_data = np.frombuffer(mic_data, dtype=np.int16)
 
-    # if len(speaker_data) != len(mic_data):
-    #     max_len = max(len(speaker_data), len(mic_data))
-    #     speaker_data = np.pad(speaker_data, (0, max_len - len(speaker_data)))
-    #     mic_data = np.pad(mic_data, (0, max_len - len(mic_data)))
+    if not voice_activity(speaker_data) and not voice_activity(mic_data):
+        print("No audio!")
+        continue
 
-    # mic_data = resample(mic_data, len(speaker_data))
+    combined_data = speaker_data + mic_data
+    speaker_file.writeframes(combined_data)
 
-    # combined_data = speaker_data + mic_data
-    # speaker_file.writeframes(combined_data.tobytes())
     
 # asyncio.get_event_loop().run_until_complete(send_audio())
 
