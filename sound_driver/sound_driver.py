@@ -3,16 +3,17 @@ import time
 import wave
 import numpy as np
 from scipy.signal import resample
-from vocie_activity import voice_activity
+from vocie_activity import voice_activity, is_talking
 import asyncio
 from send_audio import send_audio
+import io
 
 # https://github.com/s0d3s/PyAudioWPatch/blob/master/examples/pawp_record_wasapi_loopback.py
 
 # Set the audio parameters
 FORMAT = pyaudio.paInt16
 CHUNK = 512
-RECORD_SECONDS = 5  # You can adjust the recording duration as needed
+RECORD_SECONDS = 10 # You can adjust the recording duration as needed
 OUTPUT_FILENAME = "test.wav"
 
 audio = pyaudio.PyAudio()
@@ -63,6 +64,9 @@ mic_stream = audio.open(format=FORMAT, channels=n_channels,
 
 print("Recording...")
 
+CHUNK = int(default_speakers["defaultSampleRate"] / 100)
+mic_data = None
+
 for i in range(0, int(default_speakers["defaultSampleRate"] / CHUNK * RECORD_SECONDS)):
     """Record audio step-by-step"""
     speaker_data = speaker_stream.read(CHUNK)
@@ -71,15 +75,26 @@ for i in range(0, int(default_speakers["defaultSampleRate"] / CHUNK * RECORD_SEC
     speaker_data = np.frombuffer(speaker_data, dtype=np.int16)
     mic_data = np.frombuffer(mic_data, dtype=np.int16)
 
-    if not voice_activity(speaker_data) and not voice_activity(mic_data):
-        print("No audio!")
-        continue
+    # if not voice_activity(speaker_data) and not voice_activity(mic_data):
+    #     print("No audio!")
+    #     continue
 
     combined_data = speaker_data + mic_data
     speaker_file.writeframes(combined_data)
+    # if not is_talking(mic_data, int(default_mic["defaultSampleRate"])):
+    #     print("No audio!")
+    #     continue
+    print("Sound!")
+    # speaker_file.writeframes(mic_data)
 
-    
-# asyncio.get_event_loop().run_until_complete(send_audio())
+
+with open(OUTPUT_FILENAME, "rb") as fi:
+    data = fi.read()
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+loop.run_until_complete(send_audio(audio=data))
+
 
 
 speaker_file.close()
