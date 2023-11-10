@@ -39,8 +39,9 @@ analysis_col = db["analysis"]
 translate_col = db["translation"]
 print(client) #TODO print for debug connection 
 
-# Websocket analysis status manager
+# Websocket status managers
 analysisManager = ConnectionManager()
+liveTransciptionManager = ConnectionManager()
 
 
 @app.get("/media")
@@ -303,6 +304,51 @@ async def analysis_websocket(websocket: WebSocket, media_id: str):
         print("Analysis websocket error:", e)
     finally:
         analysisManager.disconnect(websocket, media_id)
+        print(f"Client {websocket.client} disconnected")
+
+
+@app.websocket("/ws/live-transcription/{live_id}")
+async def live_transcription_websocket(websocket: WebSocket, live_id: str):
+    timeout_seconds = 30 #TODO Find a good timeout
+    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+    transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
+
+    await liveTransciptionManager.connect(websocket, live_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            form_data = aiohttp.FormData()
+            form_data.add_field('file', data, filename=f'live_id_{live_id}_{hash(data)}.wav', content_type='audio/wav')
+
+            transcription = None
+            text = None
+
+            try:
+                async with aiohttp.ClientSession(timeout=session_timeout) as session:
+                    async with session.post(transcribe_url, data=form_data) as response:
+                        print("Response: ", response)
+                        if response.status == status.HTTP_201_CREATED:
+                            transcription = await response.json()
+            except TimeoutError as e:
+                print("TimeoutError while live transcribing:", e)
+            except Exception as e:
+                print("Unkonwn error while live transcribing:", e)
+
+            if transcription is not None:
+                segments = transcription['transcription']['segments']
+                text = ''.join(item['text'] for item in segments)
+
+            print(text)
+            if text is not None:
+                await liveTransciptionManager.broadcast(text, live_id)
+
+    except (WebSocketDisconnect, ConnectionClosedOK):
+        pass
+    except Exception as e:
+        print("Live transcription websocket error:", e)
+    finally:
+        liveTransciptionManager.disconnect(websocket, live_id)
         print(f"Client {websocket.client} disconnected")
 
 
