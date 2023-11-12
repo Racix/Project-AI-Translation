@@ -17,7 +17,7 @@ build_services() {
 
 run_services() {
     echo "Running Docker services..."
-    docker compose -f $COMPOSE_FILE --compatibility up -d 
+    docker-compose -f $COMPOSE_FILE --compatibility up -d 
 }
 
 case "$1" in

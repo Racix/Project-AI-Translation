@@ -170,12 +170,12 @@ async def analyze(file_path: str, media_id: str):
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
 # TRANSLATE
-@app.post("/media/{media_id}/analysis/translate/{from_language}/{to_language}")
+@app.post("/media/{media_id}/translate/{from_language}/{to_language}")
 async def start_translation(media_id: str, from_language: str, to_language: str, background_tasks: BackgroundTasks):
     # Check if media exists
     media_info = try_find_media(media_id)
-    background_tasks.add_task(translate_analysis, media_id, from_language, to_language)
-    return {"message": "Media file translation started"}
+    await translate_analysis(media_id, from_language, to_language)
+    return {"message": "Translation of the transcription started"}
 
 async def translate_analysis(media_id: str, from_language: str, to_language: str):
     timeout_seconds = 600 
@@ -186,7 +186,6 @@ async def translate_analysis(media_id: str, from_language: str, to_language: str
     try:
         async with aiohttp.ClientSession(timeout=session_timeout) as session:
             status_data = {"status": status.HTTP_200_OK, "message": "Translation started..."}
-            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
             json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
             print(json_analysis)
             json_analysis['_id'] = str(json_analysis['_id'])
@@ -206,15 +205,12 @@ async def translate_analysis(media_id: str, from_language: str, to_language: str
         print("Unkonwn error while translation:", e)
         status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Translation error."}
         return
-    finally:
-        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-
     translation['media_id'] = ObjectId(media_id)
     translation['language'] = to_language
     translate_col.insert_one(translation)
 
     status_data = {"status": status.HTTP_201_CREATED, "message": "Translation done."}
-    asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
 
 
 @app.get("/media/{media_id}/translation/{language}")

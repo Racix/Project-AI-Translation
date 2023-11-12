@@ -15,7 +15,6 @@ async def translate_analysis_file(request: Request):
         json_data = await request.json()
         from_language = request.query_params.get("from_language")
         to_language = request.query_params.get("to_language")
-        print(json_data)
         res = te.translate_to_lang(json_data, from_language, to_language)
     
     except Exception:
