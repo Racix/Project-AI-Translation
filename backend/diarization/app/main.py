@@ -15,8 +15,11 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     transcription = json.loads(json_data)["transcription"]
     if transcription is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body") # TODO should this be a error?
-
+    
     file_path = os.path.join(TMP_DIR, file.filename)
+
+    if not file_path.lower().endswith(".wav"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Media file must be of type .wav")
 
     # Temporary save the uploaded media locally
     with open(file_path, "wb") as media_file:

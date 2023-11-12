@@ -1,19 +1,8 @@
-from nemo.collections.asr.parts.utils.speaker_utils import rttm_to_labels, labels_to_pyannote_object
 from nemo.collections.asr.models.msdd_models import NeuralDiarizer
-from nemo.collections.asr.models import ClusteringDiarizer
 from omegaconf import OmegaConf
-from pydub import AudioSegment 
-import matplotlib.pyplot as plt
-import soundfile as sf
-import numpy as np
-import subprocess
-import librosa
-import IPython
-import shutil
 # import torch
 import json
 import wget
-import sys
 import os
 
 CONFIG_DIR = "/diarization/config"
@@ -23,32 +12,6 @@ OUTPUT_DIR = os.path.join(CONFIG_DIR, 'oracle_vad')
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(TMP_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-
-def convert_to_wav(file_path: str, output_path: str):
-    """Converts audio file to .wav format."""
-    subprocess.call(['ffmpeg', '-hide_banner', '-loglevel', 'warning', '-i', file_path, output_path])
-
-
-def to_mono(file_path: str):
-    """Convert audio file to mono and 16000hz subsample"""
-    y, sr = librosa.load(file_path, sr=16000, mono=True)
-    sf.write(file_path, y, sr) #TODO maybe not overwrite the original file?
-
-
-def preprocess(file_path: str) -> str | None:
-    file_name = os.path.splitext(os.path.basename(file_path))[0] + ".wav"
-    wav_path = os.path.join(TMP_DIR, file_name)
-    if file_path.lower().endswith((".mp3", ".mp4")):
-        convert_to_wav(file_path, wav_path)
-    elif file_path.lower().endswith(".wav"):
-        shutil.copyfile(file_path, wav_path)
-    else:
-        print("wrong file format")
-        return None
-
-    to_mono(wav_path)
-    return wav_path
 
 
 def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) -> OmegaConf:
@@ -112,7 +75,6 @@ def msdd_diarization(config: OmegaConf):
 
 
 def create_diarization(file_path: str, rttm: str | None, speakers: int):
-    wav_path = preprocess(file_path)
-    config = configurations(wav_path, "telephonic", rttm, speakers)
+    config = configurations(file_path, "telephonic", rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)

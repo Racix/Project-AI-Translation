@@ -2,6 +2,8 @@ FROM python:3.10
 
 WORKDIR /api
 
+RUN apt-get update && apt-get install -y ffmpeg
+
 COPY ./requirements.txt /api/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /api/requirements.txt

@@ -1,14 +1,18 @@
 import aiohttp
 import asyncio
 import json
+import librosa
 import mimetypes
 import os
 import pymongo
+import soundfile as sf
 from typing import Any
 from app.connectionManager import ConnectionManager
 from bson.objectid import ObjectId
+from datetime import datetime
 from fastapi import FastAPI, HTTPException, UploadFile, Body, status, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from pydub import AudioSegment
 from starlette.responses import FileResponse
 from websockets.exceptions import ConnectionClosedOK
 
@@ -51,16 +55,29 @@ async def upload_media(file: UploadFile):
     if not is_media_file(file):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    storage_name = datetime.now().strftime(f'%Y_%m_%d_%H_%M_%S_%f_{file.filename}')
+    file_path = os.path.join(UPLOAD_DIR, storage_name)
 
     # Save the uploaded media locally
     with open(file_path, "wb") as media_file:
         media_file.write(file.file.read())
-    
+
+    wav_path = ""
+
+    # Create and save a .wav version of file if not already .wav
+    if not storage_name.lower().endswith((".wav")):
+        wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".wav"
+        wav_path = os.path.join(UPLOAD_DIR, wav_name)
+        convert_to_wav(file_path, wav_path)
+        to_mono(wav_path)
+    else:
+        wav_path = file_path
+
     # Parse data and insert into database
-    data = {"name": file.filename, "file_path": file_path}
+    data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path}
     res = media_col.insert_one(data)
     
+    data['media_id'] = str(res.inserted_id)
     return {"message": "Media file uploaded successfully", "media_id": str(res.inserted_id)}
 
 
@@ -97,7 +114,7 @@ async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Analysis already exists. To re-analze, delete the existing analysis.")
 
     # Start analysis in the background
-    background_tasks.add_task(analyze, media_info['file_path'], media_id)
+    background_tasks.add_task(analyze, media_info['wav_path'], media_id)
     return {"message": "Media file analysis started"}
 
 
@@ -275,3 +292,15 @@ def try_find_analysis(media_id: str) -> dict[str, str]:
     analysis_info['_id'] = str(analysis_info['_id'])
     analysis_info['media_id'] = str(analysis_info['media_id'])
     return analysis_info
+
+
+def convert_to_wav(file_path: str, output_path: str):
+    """Converts audio file to .wav format."""
+    audio = AudioSegment.from_file(file_path)
+    audio.export(output_path, format="wav")
+
+    
+def to_mono(file_path: str):
+    """Convert audio file to mono and 16000hz subsample"""
+    y, sr = librosa.load(file_path, sr=16000, mono=True)
+    sf.write(file_path, y, sr)

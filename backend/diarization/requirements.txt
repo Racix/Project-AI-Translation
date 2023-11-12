@@ -1,24 +1,19 @@
 fastapi==0.103.2
 uvicorn==0.23.2
 python-multipart==0.0.6
-jiwer
-editdistance
-pyannote.metrics
-Cython
+# jiwer
+# editdistance
+# pyannote.metrics
 youtokentome
-sentencepiece
-inflect
-webdataset
-librosa
+# sentencepiece
+# inflect
+# webdataset
 pyannote.core
 pytorch_lightning
 hydra-core
 git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]
 omegaconf 
 wget
-# torch
-pydub
-ffmpeg
 
 # TODO fix so this instead works
 
