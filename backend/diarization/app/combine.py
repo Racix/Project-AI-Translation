@@ -1,9 +1,9 @@
+import app.util as ut
 import os
 
 def segments_overlap(seg1: list, seg2: list) -> bool:
     """Check if two segments overlap."""
     return seg1["start"] < seg2["start"] + seg2["duration"] and seg1["start"] + seg1["duration"] > seg2["start"]
-
 
 def align_segments_with_overlap_info(transcript_segments: dict, diarization_segments: dict) -> dict:
     combined_segments = []
@@ -63,8 +63,7 @@ def align_segments_with_overlap_info(transcript_segments: dict, diarization_segm
 
 # Adjusting the parse_rttm function to read from a file
 def parse_rttm_from_file(file_path: str) -> dict:
-    file_name, _ = os.path.splitext(os.path.basename(file_path))
-    rttm_path = f"/diarization/config/oracle_vad/pred_rttms/{file_name}.rttm" # TODO make this nicer
+    rttm_path = ut.get_rttm_path(ut.get_file_name(file_path))
     segments = []
     with open(rttm_path, 'r', encoding="utf-8") as f:
         for line in f:
@@ -74,4 +73,3 @@ def parse_rttm_from_file(file_path: str) -> dict:
             speaker = parts[7] if "speaker" in parts[7] else None
             segments.append({"start": start, "duration": duration, "text": text, "speaker": speaker})
     return segments
-

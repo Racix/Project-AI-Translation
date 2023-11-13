@@ -1,17 +1,10 @@
+import app.util as ut
+from nemo.collections.asr.parts.utils.speaker_utils import rttm_to_labels, labels_to_pyannote_object
 from nemo.collections.asr.models.msdd_models import NeuralDiarizer
 from omegaconf import OmegaConf
-# import torch
 import json
 import wget
 import os
-
-CONFIG_DIR = "/diarization/config"
-TMP_DIR = "/diarization/tmp"
-OUTPUT_DIR = os.path.join(CONFIG_DIR, 'oracle_vad')
-
-os.makedirs(CONFIG_DIR, exist_ok=True)
-os.makedirs(TMP_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) -> OmegaConf:
@@ -19,10 +12,10 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) 
     DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
     CONFIG_URL = f"https://raw.githubusercontent.com/NVIDIA/NeMo/main/examples/speaker_tasks/diarization/conf/inference/{CONFIG_FILE_NAME}"
-    if not os.path.exists(os.path.join(CONFIG_DIR, CONFIG_FILE_NAME)):
-        CONFIG = wget.download(CONFIG_URL, CONFIG_DIR)
+    if not os.path.exists(os.path.join(ut.CONFIG_DIR, CONFIG_FILE_NAME)):
+        CONFIG = wget.download(CONFIG_URL, ut.CONFIG_DIR)
     else:
-        CONFIG = os.path.join(CONFIG_DIR, CONFIG_FILE_NAME)
+        CONFIG = os.path.join(ut.CONFIG_DIR, CONFIG_FILE_NAME)
     config = OmegaConf.load(CONFIG)
     
     meta = {
@@ -32,11 +25,11 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) 
         'label': 'infer',
         'text': '-',  
         'num_speakers': speakers,
-        'rttm_filepath': None, # Sätt till None om vi inte vill ha RTTM!!!!
+        'rttm_filepath': rttm
         'uem_filepath': None
     }
 
-    input_manifest_path = CONFIG_DIR + "/input_manifest.json"
+    input_manifest_path = ut.CONFIG_DIR + "/input_manifest.json"
     with open(input_manifest_path,'w') as fp:
         json.dump(meta, fp)
         fp.write('\n')
@@ -48,7 +41,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) 
     config.diarizer.manifest_filepath = input_manifest_path
     # config.device = device
     config.batch_size = 1
-    config.diarizer.out_dir = OUTPUT_DIR # Directory to store intermediate files and prediction outputs
+    config.diarizer.out_dir = ut.OUTPUT_DIR # Directory to store intermediate files and prediction outputs
     config.diarizer.speaker_embeddings.model_path = pretrained_speaker_model
     config.diarizer.msdd_model.model_path = pretrained_msdd  
     config.diarizer.msdd_model.parameters.sigmoid_threshold = [0.7,1] 
