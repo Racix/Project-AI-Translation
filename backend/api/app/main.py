@@ -56,7 +56,9 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
     # Names and paths
-    storage_name = datetime.now().strftime(f'%Y_%m_%d_%H_%M_%S_%f_{file.filename}')
+    now = datetime.now()
+    date = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+    storage_name = now.strftime(f'%Y_%m_%d_%H_%M_%S_%f_{file.filename}')
     wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".mono.wav"
     file_path = os.path.join(UPLOAD_DIR, storage_name)
     wav_path = os.path.join(UPLOAD_DIR, wav_name)
@@ -69,7 +71,7 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks):
     background_tasks.add_task(write_mono_wav_file, file_path, wav_path)
 
     # Parse data and insert into database
-    data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path}
+    data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path, "date": date}
     res = media_col.insert_one(data)
     
     data['media_id'] = str(res.inserted_id)
