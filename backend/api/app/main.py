@@ -62,16 +62,11 @@ async def upload_media(file: UploadFile):
     with open(file_path, "wb") as media_file:
         media_file.write(file.file.read())
 
-    wav_path = ""
-
-    # Create and save a .wav version of file if not already .wav
-    if not storage_name.lower().endswith((".wav")):
-        wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".wav"
-        wav_path = os.path.join(UPLOAD_DIR, wav_name)
-        convert_to_wav(file_path, wav_path)
-        to_mono(wav_path)
-    else:
-        wav_path = file_path
+    # Save a mono .wav version 
+    wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".mono.wav"
+    wav_path = os.path.join(UPLOAD_DIR, wav_name)
+    convert_to_wav(file_path, wav_path)
+    to_mono(wav_path)
 
     # Parse data and insert into database
     data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path}
