@@ -3,5 +3,8 @@
 to build as a docker container
 ### `./backend.sh build`
 
-to run said container
+to build only a specified service as a docker container
+### `./backend.sh build {service}`
+
+to run all containers
 ### `./backend.sh run`
