@@ -5,9 +5,6 @@ import json
 import os
 from fastapi import FastAPI, HTTPException, status, UploadFile, Form
 
-TMP_DIR = "/tmp"
-os.makedirs(TMP_DIR, exist_ok=True)
-
 app = FastAPI()
 
 @app.post("/diarize", status_code=status.HTTP_201_CREATED)
@@ -16,7 +13,9 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     if transcription is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body") # TODO should this be a error?
 
-    file_path = os.path.join(TMP_DIR, file.filename)
+    ut.initialize_dirs()
+
+    file_path = os.path.join(ut.TMP_DIR, file.filename)
 
     # Temporary save the uploaded media locally
     with open(file_path, "wb") as media_file:
@@ -29,10 +28,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:
-        # Remove temp files
-        os.remove(ut.get_rttm_path(ut.get_file_name(file_path)))
-        os.remove(ut.get_wav_path(ut.get_file_name(file_path)))
-        os.remove(file_path)
+        ut.delete_dirs()
 
     return {"diarization": transcription}
     

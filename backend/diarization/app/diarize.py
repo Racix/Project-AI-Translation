@@ -17,11 +17,6 @@ import wget
 import sys
 import os
 
-os.makedirs(ut.CONFIG_DIR, exist_ok=True)
-os.makedirs(ut.DIARIZE_TMP_DIR, exist_ok=True)
-os.makedirs(ut.OUTPUT_DIR, exist_ok=True)
-
-
 def convert_to_wav(file_path: str, output_path: str):
     """Converts audio file to .wav format."""
     subprocess.call(['ffmpeg', '-hide_banner', '-loglevel', 'warning', '-i', file_path, output_path])
