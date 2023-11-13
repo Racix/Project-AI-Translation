@@ -51,22 +51,22 @@ async def get_all_media():
 
 
 @app.post("/media", status_code=status.HTTP_201_CREATED)
-async def upload_media(file: UploadFile):
+async def upload_media(file: UploadFile, background_tasks: BackgroundTasks):
     if not is_media_file(file):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
+    # Names and paths
     storage_name = datetime.now().strftime(f'%Y_%m_%d_%H_%M_%S_%f_{file.filename}')
+    wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".mono.wav"
     file_path = os.path.join(UPLOAD_DIR, storage_name)
+    wav_path = os.path.join(UPLOAD_DIR, wav_name)
 
     # Save the uploaded media locally
     with open(file_path, "wb") as media_file:
         media_file.write(file.file.read())
 
-    # Save a mono .wav version 
-    wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".mono.wav"
-    wav_path = os.path.join(UPLOAD_DIR, wav_name)
-    convert_to_wav(file_path, wav_path)
-    to_mono(wav_path)
+    # Write file in the background
+    background_tasks.add_task(write_mono_wav_file, file_path, wav_path)
 
     # Parse data and insert into database
     data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path}
@@ -74,6 +74,12 @@ async def upload_media(file: UploadFile):
     
     data['media_id'] = str(res.inserted_id)
     return {"message": "Media file uploaded successfully", "media_id": str(res.inserted_id)}
+
+
+async def write_mono_wav_file(file_path: str, wav_path: str):
+    # Crete the mono .wav version
+    convert_to_wav(file_path, wav_path)
+    to_mono(wav_path)
 
 
 @app.get("/media/{media_id}")
@@ -109,11 +115,11 @@ async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Analysis already exists. To re-analze, delete the existing analysis.")
 
     # Start analysis in the background
-    background_tasks.add_task(analyze, media_info['wav_path'], media_id)
+    background_tasks.add_task(analyze, media_info['file_path'], media_info['wav_path'], media_id)
     return {"message": "Media file analysis started"}
 
 
-async def analyze(file_path: str, media_id: str):
+async def analyze(file_path: str, wav_path: str, media_id: str):
     timeout_seconds = 600 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
@@ -122,12 +128,18 @@ async def analyze(file_path: str, media_id: str):
     diarization = {}
     status_data = {}
 
+    # Crete the mono .wav version if not exists
+    if not os.path.exists(file_path):
+        status_data = {"status": status.HTTP_200_OK, "message": "Converting to wav..."}
+        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+        await write_mono_wav_file(file_path, wav_path)
+
     # Transcribe
     try:
         async with aiohttp.ClientSession(timeout=session_timeout) as session:
             status_data = {"status": status.HTTP_200_OK, "message": "Transcription started..."}
             asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-            with open(file_path, 'rb') as file:
+            with open(wav_path, 'rb') as file:
                 async with session.post(transcribe_url, data={'file': file}) as response:
                     if response.status == status.HTTP_201_CREATED:
                         transcription = await response.json()
@@ -151,7 +163,7 @@ async def analyze(file_path: str, media_id: str):
         async with aiohttp.ClientSession(timeout=session_timeout) as session:
             status_data = {"status": status.HTTP_200_OK, "message": "Diarization started..."}
             asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-            with open(file_path, 'rb') as file: 
+            with open(wav_path, 'rb') as file: 
                 form = aiohttp.FormData()
                 form.add_field('json_data', json.dumps(transcription), content_type='application/json')
                 form.add_field('file', file)

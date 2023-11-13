@@ -1,5 +1,4 @@
 import app.util as ut
-from nemo.collections.asr.parts.utils.speaker_utils import rttm_to_labels, labels_to_pyannote_object
 from nemo.collections.asr.models.msdd_models import NeuralDiarizer
 from omegaconf import OmegaConf
 import json
@@ -25,7 +24,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) 
         'label': 'infer',
         'text': '-',  
         'num_speakers': speakers,
-        'rttm_filepath': rttm
+        'rttm_filepath': rttm,
         'uem_filepath': None
     }
 
