@@ -170,69 +170,37 @@ async def analyze(file_path: str, media_id: str):
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
 # TRANSLATE
-@app.post("/media/{media_id}/translate/{from_language}/{to_language}")
-async def start_translation(media_id: str, from_language: str, to_language: str, background_tasks: BackgroundTasks):
+@app.post("/media/{media_id}/analysis/translate/{to_language}")
+async def start_translation(media_id: str, to_language: str,):
     # Check if media exists
     media_info = try_find_media(media_id)
-    await translate_analysis(media_id, from_language, to_language)
+    await translate_analysis(media_id, to_language)
     return {"message": "Translation of the transcription started"}
 
-async def translate_analysis(media_id: str, from_language: str, to_language: str):
+async def translate_analysis(media_id: str, to_language: str):
     timeout_seconds = 600 
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
     translation = {}
-    status_data = {}
     try:
         async with aiohttp.ClientSession(timeout=session_timeout) as session:
-            status_data = {"status": status.HTTP_200_OK, "message": "Translation started..."}
             json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
-            print(json_analysis)
             json_analysis['_id'] = str(json_analysis['_id'])
             json_analysis['media_id'] = str(json_analysis['media_id'])
-            async with session.post(translate_url, json=json_analysis, params={"from_language": from_language, "to_language": to_language}) as response:
+            detected_language = json_analysis["diarization"]["Detected language"]
+            async with session.post(translate_url, json=json_analysis, params={"from_language": detected_language, "to_language": to_language}) as response:
                 if response.status == status.HTTP_201_CREATED:
                     translation = await response.json()
-                    status_data = {"status": status.HTTP_200_OK, "message": "Translation done."}
-                else:
-                    status_data = {"status": response.status, "message": "Translation error."}
-                    return
     except TimeoutError as e:
         print("TimeoutError while translation:", e)
-        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Translation timed out."}
         return
     except Exception as e:
         print("Unkonwn error while translation:", e)
-        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Translation error."}
         return
     translation['media_id'] = ObjectId(media_id)
     translation['language'] = to_language
     translate_col.insert_one(translation)
-
-    status_data = {"status": status.HTTP_201_CREATED, "message": "Translation done."}
-
-
-
-@app.get("/media/{media_id}/translation/{language}")
-async def get_analysis_translation(media_id: str, language: str):
-    try_find_media(media_id)
-    translation_info = try_find_translation(media_id, language)
-
-    return {"message": translation_info}
-
-def try_find_translation(media_id: str, language: str) -> dict[str, str]:
-    """Help function for http endpoints to check if the analysis exists"""
-    try:
-        translation_info = translate_col.find_one({"media_id": ObjectId(media_id), "language": language})
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
-    if translation_info is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Translation not found")
-    
-
-    translation_info['_id'] = str(translation_info['_id'])
-    translation_info['media_id'] = str(translation_info['media_id'])
-    return translation_info
+    return {"message": "Translation done."}
 
 @app.get("/media/{media_id}/analysis")
 async def get_media_analysis(media_id: str):
@@ -264,6 +232,13 @@ async def delete_media_analysis(media_id: str):
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
 
     return {"message": "Analysis deleted successfully", "media_id": media_id}
+
+@app.get("/media/{media_id}/translation/{language}")
+async def get_analysis_translation(media_id: str, language: str):
+    try_find_media(media_id)
+    translation_info = try_find_translation(media_id, language)
+
+    return {"message": translation_info}
 
 
 @app.websocket("/ws/analysis/{media_id}")
@@ -340,3 +315,17 @@ def try_find_analysis(media_id: str) -> dict[str, str]:
     analysis_info['_id'] = str(analysis_info['_id'])
     analysis_info['media_id'] = str(analysis_info['media_id'])
     return analysis_info
+
+def try_find_translation(media_id: str, language: str) -> dict[str, str]:
+    """Help function for http endpoints to check if the analysis exists"""
+    try:
+        translation_info = translate_col.find_one({"media_id": ObjectId(media_id), "language": language})
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
+    if translation_info is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Translation not found")
+    
+
+    translation_info['_id'] = str(translation_info['_id'])
+    translation_info['media_id'] = str(translation_info['media_id'])
+    return translation_info
