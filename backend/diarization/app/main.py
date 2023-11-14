@@ -17,7 +17,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Media file must be of type .wav")
     
     # Initiate temporary dictionaries for Nemo output
-    ut.initialize_dirs()
+    timestamp = ut.initialize_dirs()
     file_path = os.path.join(ut.TMP_DIR, file.filename)
 
     # Temporary save the uploaded media locally
@@ -31,7 +31,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:
-        ut.delete_dirs()
+        ut.delete_dirs(timestamp)
 
     return {"diarization": transcription}
     
