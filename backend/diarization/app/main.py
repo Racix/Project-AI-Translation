@@ -13,7 +13,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     if transcription is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body") # TODO should this be a error?
 
-    ut.initialize_dirs()
+    timestamp = ut.initialize_dirs()
 
     file_path = os.path.join(ut.TMP_DIR, file.filename)
 
@@ -28,7 +28,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:
-        ut.delete_dirs()
+        ut.delete_dirs(timestamp)
 
     return {"diarization": transcription}
     
