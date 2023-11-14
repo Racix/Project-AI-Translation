@@ -131,7 +131,7 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
     status_data = {}
 
     # Crete the mono .wav version if not exists
-    if not os.path.exists(file_path):
+    if not os.path.exists(wav_path):
         status_data = {"status": status.HTTP_200_OK, "message": "Converting to wav..."}
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
         await write_mono_wav_file(file_path, wav_path)
