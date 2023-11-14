@@ -5,100 +5,116 @@ import numpy as np
 from scipy.signal import resample
 from vocie_activity import voice_activity, is_talking
 import asyncio
-from send_audio import send_audio
+from send_audio import WebSocket
 import io
 
 # https://github.com/s0d3s/PyAudioWPatch/blob/master/examples/pawp_record_wasapi_loopback.py
+async def sound_driver():
 
-# Set the audio parameters
-FORMAT = pyaudio.paInt16
-CHUNK = 512
-RECORD_SECONDS = 10 # You can adjust the recording duration as needed
-OUTPUT_FILENAME = "test.wav"
+    # Set the audio parameters
+    FORMAT = pyaudio.paInt16
+    CHUNK = 512
+    RECORD_SECONDS = 10 # You can adjust the recording duration as needed
+    OUTPUT_FILENAME = "test.wav"
 
-audio = pyaudio.PyAudio()
+    audio = pyaudio.PyAudio()
 
-SAMPLE_SIZE = audio.get_sample_size(FORMAT)
+    SAMPLE_SIZE = audio.get_sample_size(FORMAT)
+    print(SAMPLE_SIZE)
 
-wasapi_info = audio.get_host_api_info_by_type(pyaudio.paWASAPI)
-print(wasapi_info)
-default_speakers = audio.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
-default_mic = audio.get_device_info_by_index(wasapi_info["defaultInputDevice"])
-# print(default_speakers, default_mic)
+    wasapi_info = audio.get_host_api_info_by_type(pyaudio.paWASAPI)
+    print(wasapi_info)
+    default_speakers = audio.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
+    default_mic = audio.get_device_info_by_index(wasapi_info["defaultInputDevice"])
+    # print(default_speakers, default_mic)
 
-if not default_speakers["isLoopbackDevice"]:
-    for loopback in audio.get_loopback_device_info_generator():
-        """
-        Try to find loopback device with same name(and [Loopback suffix]).
-        Unfortunately, this is the most adequate way at the moment.
-        """
-        if default_speakers["name"] in loopback["name"]:
-            default_speakers = loopback
-            break
-        else:
-            print("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
-            exit()
+    if not default_speakers["isLoopbackDevice"]:
+        for loopback in audio.get_loopback_device_info_generator():
+            """
+            Try to find loopback device with same name(and [Loopback suffix]).
+            Unfortunately, this is the most adequate way at the moment.
+            """
+            if default_speakers["name"] in loopback["name"]:
+                default_speakers = loopback
+                break
+            else:
+                print("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
+                exit()
 
-print(default_speakers["maxInputChannels"], default_speakers["defaultSampleRate"])
-print(default_mic["maxInputChannels"], default_mic["defaultSampleRate"])
+    print(default_speakers["maxInputChannels"], default_speakers["defaultSampleRate"])
+    print(default_mic["maxInputChannels"], default_mic["defaultSampleRate"])
 
-# number of channels to be higher or equalt to the max amount of channels or else weird stuff happend to the audio quality
-n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
+    # number of channels to be higher or equalt to the max amount of channels or else weird stuff happend to the audio quality
+    sample_rate = default_speakers["defaultSampleRate"] if default_speakers["defaultSampleRate"] >= default_mic["defaultSampleRate"] else default_mic["defaultSampleRate"]
+    n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
 
-speaker_file = wave.open(OUTPUT_FILENAME, 'wb')
-speaker_file.setnchannels(n_channels)
-speaker_file.setsampwidth(SAMPLE_SIZE)
-speaker_file.setframerate(int(default_speakers["defaultSampleRate"]))   
-   
-speaker_stream = audio.open(format=FORMAT,
-    channels=n_channels,
-    rate=int(default_speakers["defaultSampleRate"]),
-    frames_per_buffer=CHUNK,
-    input=True,
-    input_device_index=default_speakers["index"],
- )
+    speaker_file = wave.open(OUTPUT_FILENAME, 'wb')
+    speaker_file.setnchannels(n_channels)
+    speaker_file.setsampwidth(SAMPLE_SIZE)
+    speaker_file.setframerate(int(default_speakers["defaultSampleRate"]))   
+    
+    CHUNK = int(default_speakers["defaultSampleRate"] / 100) * 2
+    # 48000 / 100 = 480   1s = 480000   0.01s =  480  
 
-mic_stream = audio.open(format=FORMAT, channels=n_channels,
-                       rate=int(default_mic["defaultSampleRate"]), input=True,
-                       frames_per_buffer=CHUNK)
+    speaker_stream = audio.open(format=FORMAT,
+        channels=n_channels,
+        rate=int(default_speakers["defaultSampleRate"]),
+        frames_per_buffer=CHUNK,
+        input=True,
+        input_device_index=default_speakers["index"],
+    )
 
-print("Recording...")
+    mic_stream = audio.open(format=FORMAT, channels=n_channels,
+                        rate=int(default_mic["defaultSampleRate"]), input=True,
+                        frames_per_buffer=CHUNK)
 
-CHUNK = int(default_speakers["defaultSampleRate"] / 100)
-mic_data = None
+    print("Recording...")
 
-for i in range(0, int(default_speakers["defaultSampleRate"] / CHUNK * RECORD_SECONDS)):
-    """Record audio step-by-step"""
-    speaker_data = speaker_stream.read(CHUNK)
-    mic_data = mic_stream.read(CHUNK)
+    
+    websocket_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(websocket_loop)
 
-    speaker_data = np.frombuffer(speaker_data, dtype=np.int16)
-    mic_data = np.frombuffer(mic_data, dtype=np.int16)
+    ws = WebSocket()
+    await ws.connect()
 
-    # if not voice_activity(speaker_data) and not voice_activity(mic_data):
-    #     print("No audio!")
-    #     continue
+    voice_activity_last_loop = False
+    send_data = np.empty(0, dtype=np.int16)
+    
+    while 1== 1:
+        # Read data from speaker and mic
+        speaker_data = speaker_stream.read(CHUNK)
+        mic_data = mic_stream.read(CHUNK, exception_on_overflow=False)
 
-    combined_data = speaker_data + mic_data
-    speaker_file.writeframes(combined_data)
-    # if not is_talking(mic_data, int(default_mic["defaultSampleRate"])):
-    #     print("No audio!")
-    #     continue
-    print("Sound!")
-    # speaker_file.writeframes(mic_data)
+        speaker_data = np.frombuffer(speaker_data, dtype=np.int16)
+        mic_data = np.frombuffer(mic_data, dtype=np.int16)
+        combined_data = speaker_data + mic_data
 
+        if not is_talking(combined_data, int(default_mic["defaultSampleRate"])):
+            # if voice_activity_last_loop:
+            if send_data.size >= 1000000:
+                send_data = np.insert(send_data, 0, int(sample_rate/100))
+                send_data = np.insert(send_data, 0, n_channels)
 
-with open(OUTPUT_FILENAME, "rb") as fi:
-    data = fi.read()
+                print("Send:" ,send_data.size)
+                            
+                asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
+                send_data = np.empty(0, dtype=np.int16)
+                await asyncio.sleep(0.01)
 
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-loop.run_until_complete(send_audio(audio=data))
+            # voice_activity_last_loop = False
 
+            # print("No audio!")
+            continue
+        
+        # voice_activity_last_loop = True
+        # print("Audio!")
+        send_data = np.append(send_data, combined_data)
+        # speaker_file.writeframes(combined_data)
+    ## Hela filen skickas varje gång :(
 
-
-speaker_file.close()
-print("Done!")
+    ws.close()
+    speaker_file.close()
+    print("Done!")
 
 
 
