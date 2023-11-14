@@ -121,8 +121,10 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
     diarize_url = f"http://{os.environ['DIARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/diarize"
+    summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
     transcription = {}
     diarization = {}
+    summarize = {}
     status_data = {}
 
     # Crete the mono .wav version if not exists
@@ -182,6 +184,31 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
+    # Summarize
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+            with open(file_path, 'rb') as file:
+                async with session.post(summarize_url, data={'file': file}) as response:
+                    if response.status == status.HTTP_201_CREATED:
+                        summarize = await response.json()
+                        status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
+                    else:
+                        status_data = {"status": response.status, "message": "Summarization error."}
+                        return
+    except TimeoutError as e:
+        print("TimeoutError while summarizing:", e)
+        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Summarization timed out."}
+        return
+    except Exception as e:
+        print("Unkonwn error while summarizing:", e)
+        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Summarization error."}
+        return
+    finally:
+        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
+    diarization['summary'] = summarize.get('summarization', {}).get('response', '')
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     diarization['media_id'] = ObjectId(media_id)
     analysis_col.insert_one(diarization)
