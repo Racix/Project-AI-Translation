@@ -4,8 +4,11 @@ import json
 import librosa
 import mimetypes
 import os
+import io
+import numpy as np
 import pymongo
 import soundfile as sf
+import wave
 from typing import Any
 from app.connectionManager import ConnectionManager
 from bson.objectid import ObjectId
@@ -318,6 +321,8 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     try:
         while True:
             data = await websocket.receive_bytes()
+            data = bytes_to_wave(data)
+            
             form_data = aiohttp.FormData()
             form_data.add_field('file', data, filename=f'live_id_{live_id}_{hash(data)}.wav', content_type='audio/wav')
 
@@ -339,7 +344,7 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
                 segments = transcription['transcription']['segments']
                 text = ''.join(item['text'] for item in segments)
 
-            print(text)
+            print("text:", transcription)
             if text is not None:
                 await liveTransciptionManager.broadcast(text, live_id)
 
@@ -350,6 +355,34 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     finally:
         liveTransciptionManager.disconnect(websocket, live_id)
         print(f"Client {websocket.client} disconnected")
+
+    
+def bytes_to_wave(data):
+    # Ensure the array is of type int16
+
+    data = np.frombuffer(data, dtype=np.int16)
+    print("InitDATA: ", data)
+    n_channels = data[0]
+    sample_rate = data[1]*100
+    data = data[2:]
+    print("laterDAta: ", data)
+    print("n_channels", n_channels, "sample_rate", sample_rate)
+    
+    # Create a wave file in memory
+    with io.BytesIO() as wave_buffer:
+        with wave.open(wave_buffer, 'w') as wave_file:
+            wave_file.setnchannels(n_channels)  # 1 channel (mono)
+            wave_file.setsampwidth(2)   # 2 bytes per sample (16-bit PCM)
+            wave_file.setframerate(sample_rate)
+            wave_file.writeframes(data.tobytes())
+            
+        
+        # Get the wave file data from the buffer
+        wave_data = wave_buffer.getvalue()
+        with open('output.wav', 'wb') as output_file:
+                output_file.write(wave_data)
+
+        return wave_data
 
 
 def is_media_file(file: UploadFile):
