@@ -1,6 +1,5 @@
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
-import json
-import os
+import time
 
 translate_model1 = "facebook/nllb-200-distilled-600M"
 # translate_model2 = "facebook/nllb-200–1.3B"
@@ -19,8 +18,10 @@ language_mapped = {
 }
 
 
-def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
-
+def translate_to_lang(data: dict, from_language: str, to_language: str) -> list:
+    print(f"Translation started...")
+    start_time = time.time() # TODO only for time print, remove later
+    
     model = AutoModelForSeq2SeqLM.from_pretrained(translate_model1)
     tokenizer = AutoTokenizer.from_pretrained(translate_model1)
     translator = pipeline(
@@ -38,5 +39,9 @@ def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
         translated_text = output[0]["translation_text"]
         sentence['text'] = translated_text
         translated_data.append(sentence)
-    return translated_data
 
+    # TODO only for time print, remove later
+    end_time = time.time() 
+    total_time = end_time - start_time
+    print(f"Translation finished. Total time: {str(total_time)}")
+    return translated_data
