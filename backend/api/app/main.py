@@ -190,7 +190,10 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
             status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
             asyncio.create_task(analysisManager.broadcast(status_data, media_id))
             with open(file_path, 'rb') as file:
-                async with session.post(summarize_url, data={'file': file}) as response:
+                form_new = aiohttp.FormData()
+                form_new.add_field('json_data', json.dumps(diarization), content_type='application/json')
+                form_new.add_field('file', file)
+                async with session.post(summarize_url, data=form_new) as response:
                     if response.status == status.HTTP_201_CREATED:
                         summarize = await response.json()
                         status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
@@ -331,6 +334,33 @@ async def analysis_websocket(websocket: WebSocket, media_id: str):
     finally:
         analysisManager.disconnect(websocket, media_id)
         print(f"Client {websocket.client} disconnected")
+
+
+@app.get("/media/{media_id}/analysis/summary")
+async def get_media_summary(media_id: str):
+    # Check if media and analysis exists
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+            with open(file_path, 'rb') as file:
+                async with session.post(summarize_url, data={'file': file}) as response:
+                    if response.status == status.HTTP_201_CREATED:
+                        summarize = await response.json()
+                        status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
+                    else:
+                        status_data = {"status": response.status, "message": "Summarization error."}
+                        return
+    except TimeoutError as e:
+        print("TimeoutError while summarizing:", e)
+        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Summarization timed out."}
+        return
+    except Exception as e:
+        print("Unkonwn error while summarizing:", e)
+        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Summarization error."}
+        return
+
+    return {"message": analysis_info}
 
 
 def is_media_file(file: UploadFile):

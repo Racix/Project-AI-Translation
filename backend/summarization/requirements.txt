@@ -9,3 +9,4 @@ Pillow
 fastapi==0.103.2
 python-multipart
 accelerate
+matplotlib
