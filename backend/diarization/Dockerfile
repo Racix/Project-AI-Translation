@@ -10,6 +10,11 @@ RUN wget --content-disposition https://api.ngc.nvidia.com/v2/models/nvidia/nemo/
     unzip diar_msdd_telephonic_1.0.1.zip -d /diarization/models && \
     rm vad_multilingual_marblenet_1.10.0.zip titanet_large_v1.zip diar_msdd_telephonic_1.0.1.zip
 
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY ./requirements.txt /diarization/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade Cython==3.0.3

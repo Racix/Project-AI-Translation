@@ -21,4 +21,5 @@ async def translate_analysis_file(request: Request):
         print(traceback.format_exc())
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Translate error")
 
-    return {"translation": res}
+    translation = {"language": to_language, "segments": res}
+    return {"translation": translation}

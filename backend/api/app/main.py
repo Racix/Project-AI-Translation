@@ -48,7 +48,7 @@ async def get_all_media():
     res = list(media_col.find())
     for row in res:
         row['_id'] = str(row['_id'])
-    return {"message": res}
+    return res
 
 
 @app.post("/media", status_code=status.HTTP_201_CREATED)
@@ -73,16 +73,10 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks):
 
     # Parse data and insert into database
     data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path, "date": date}
-    res = media_col.insert_one(data)
+    media_col.insert_one(data)
     
-    data['media_id'] = str(res.inserted_id)
-    return {"message": "Media file uploaded successfully", "media_id": str(res.inserted_id)}
-
-
-async def write_mono_wav_file(file_path: str, wav_path: str):
-    # Crete the mono .wav version
-    convert_to_wav(file_path, wav_path)
-    to_mono(wav_path)
+    data['_id'] = str(data['_id'])
+    return data
 
 
 @app.get("/media/{media_id}")
@@ -195,38 +189,6 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
     status_data = {"status": status.HTTP_201_CREATED, "message": "Analysis done."}
     asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-# TRANSLATE
-@app.post("/media/{media_id}/analysis/translate/{to_language}")
-async def start_translation(media_id: str, to_language: str,):
-    # Check if media exists
-    media_info = try_find_media(media_id)
-    await translate_analysis(media_id, to_language)
-    return {"message": "Translation of the transcription started"}
-
-async def translate_analysis(media_id: str, to_language: str):
-    timeout_seconds = 600 
-    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-    translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
-    translation = {}
-    try:
-        async with aiohttp.ClientSession(timeout=session_timeout) as session:
-            json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
-            json_analysis['_id'] = str(json_analysis['_id'])
-            json_analysis['media_id'] = str(json_analysis['media_id'])
-            detected_language = json_analysis["diarization"]["Detected language"]
-            async with session.post(translate_url, json=json_analysis, params={"from_language": detected_language, "to_language": to_language}) as response:
-                if response.status == status.HTTP_201_CREATED:
-                    translation = await response.json()
-    except TimeoutError as e:
-        print("TimeoutError while translation:", e)
-        return
-    except Exception as e:
-        print("Unkonwn error while translation:", e)
-        return
-    translation['media_id'] = ObjectId(media_id)
-    translation['language'] = to_language
-    translate_col.insert_one(translation)
-    return {"message": "Translation done."}
 
 @app.get("/media/{media_id}/analysis")
 async def get_media_analysis(media_id: str):
@@ -234,7 +196,7 @@ async def get_media_analysis(media_id: str):
     try_find_media(media_id)
     analysis_info = try_find_analysis(media_id)
 
-    return {"message": analysis_info}
+    return analysis_info
 
 
 @app.put("/media/{media_id}/analysis")
@@ -246,7 +208,7 @@ async def update_media_analysis(media_id: str, segments: Any = Body(...)):
     analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": segments})
     analysis_info = try_find_analysis(media_id)
 
-    return {"message": analysis_info}
+    return analysis_info
 
 
 @app.delete("/media/{media_id}/analysis")
@@ -259,12 +221,55 @@ async def delete_media_analysis(media_id: str):
 
     return {"message": "Analysis deleted successfully", "media_id": media_id}
 
-@app.get("/media/{media_id}/translation/{language}")
-async def get_analysis_translation(media_id: str, language: str):
+
+@app.post("/media/{media_id}/analysis/translate/{language}", status_code=status.HTTP_201_CREATED)
+async def start_translation(media_id: str, language: str,):
+    # Check if media exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+
+    translation = await translate_analysis(media_id, language)
+    return translation
+
+
+async def translate_analysis(media_id: str, to_language: str) -> dict:
+    timeout_seconds = 300
+    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+    translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
+    translation = {}
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
+            json_analysis['_id'] = str(json_analysis['_id'])
+            json_analysis['media_id'] = str(json_analysis['media_id'])
+            detected_language = json_analysis["diarization"]["Detected language"]
+            async with session.post(translate_url, json=json_analysis, params={"from_language": detected_language, "to_language": to_language}) as response:
+                if response.status == status.HTTP_201_CREATED:
+                    translation = await response.json()
+                    print("TRANS:", translation)
+                else:
+                    raise Exception()
+    except TimeoutError as e:
+        print("TimeoutError while translating:", e)
+        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=f"TimeoutError while translating")
+    except Exception as e:
+        print("Unkonwn error while translating:", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Unkonwn error while translating")
+    
+    translation['media_id'] = ObjectId(media_id)
+    translate_col.insert_one(translation)
+
+    translation['_id'] = str(translation['_id'])
+    translation['media_id'] = str(translation['media_id'])
+    return translation
+
+
+@app.get("/media/{media_id}/analysis/translate/{language}")
+async def get_translation(media_id: str, language: str):
     try_find_media(media_id)
     translation_info = try_find_translation(media_id, language)
 
-    return {"message": translation_info}
+    return translation_info
 
 
 @app.websocket("/ws/analysis/{media_id}")
@@ -346,7 +351,7 @@ def try_find_analysis(media_id: str) -> dict[str, str]:
 def try_find_translation(media_id: str, language: str) -> dict[str, str]:
     """Help function for http endpoints to check if the translation exists"""
     try:
-        translation_info = translate_col.find_one({"media_id": ObjectId(media_id), "language": language})
+        translation_info = translate_col.find_one({"media_id": ObjectId(media_id), "translation.language": language})
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid media id")
     if translation_info is None:
@@ -356,6 +361,12 @@ def try_find_translation(media_id: str, language: str) -> dict[str, str]:
     translation_info['media_id'] = str(translation_info['media_id'])
     return translation_info
   
+
+async def write_mono_wav_file(file_path: str, wav_path: str):
+    # Crete the mono .wav version
+    convert_to_wav(file_path, wav_path)
+    to_mono(wav_path)
+
 
 def convert_to_wav(file_path: str, output_path: str):
     """Converts audio file to .wav format."""
