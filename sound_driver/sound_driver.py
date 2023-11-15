@@ -70,7 +70,6 @@ async def sound_driver():
 
     print("Recording...")
 
-    
     websocket_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(websocket_loop)
 
@@ -79,7 +78,9 @@ async def sound_driver():
 
     voice_activity_last_loop = False
     send_data = np.empty(0, dtype=np.int16)
-    
+    loop_num = 0
+
+    started_talking = False
     while 1== 1:
         # Read data from speaker and mic
         speaker_data = speaker_stream.read(CHUNK)
@@ -90,14 +91,20 @@ async def sound_driver():
         combined_data = speaker_data + mic_data
 
         if not is_talking(combined_data, int(default_mic["defaultSampleRate"])):
+
+            if started_talking:
+                send_data = np.append(send_data, combined_data)
+
             # if voice_activity_last_loop:
-            if send_data.size >= 1000000:
+            loop_num+= 1
+            if loop_num >= 50 and send_data.size >= 50000:
                 send_data = np.insert(send_data, 0, int(sample_rate/100))
                 send_data = np.insert(send_data, 0, n_channels)
 
                 print("Send:" ,send_data.size)
                             
                 asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
+                started_talking = False
                 send_data = np.empty(0, dtype=np.int16)
                 await asyncio.sleep(0.01)
 
@@ -108,9 +115,10 @@ async def sound_driver():
         
         # voice_activity_last_loop = True
         # print("Audio!")
+        loop_num = 0
         send_data = np.append(send_data, combined_data)
+        started_talking  = True
         # speaker_file.writeframes(combined_data)
-    ## Hela filen skickas varje gång :(
 
     ws.close()
     speaker_file.close()
