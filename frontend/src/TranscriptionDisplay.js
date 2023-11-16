@@ -241,33 +241,32 @@ function TranscriptionDisplay() {
       <div>
         <div className="transcription-buttons-container">
         {
-        summaryData
-        ? (
-        // If summaryData is true, render this button
-        <button
-          onClick={() => setSummaryVisible(!summaryVisible)}
-          className="summary-button blue-button"
-        >
-          Summary
-        </button>
-      )
-    : (
-        // If summaryData is false, render something else here
+  summaryData
+  ? (
+      // If summaryData is true
+      <button
+        onClick={() => setSummaryVisible(!summaryVisible)}
+        className="summary-button blue-button"
+      >
+        Summary
+      </button>
+    )
+  : ( // If false, check if there is transcription
+      transcriptionData.length > 0 && (
         <div>
           {!buttonClicked ? (
-          <button
-          className="summary-button blue-button"
-          onClick={() => handleClick()}>
-            Summarize
-          </button>
-          ): (
-            data && (
-              <div className="message-field">{data.message}</div>
-            )
+            <button
+              className="summary-button blue-button"
+              onClick={() => handleClick()}>
+              Summarize
+            </button>
+          ) : (
+            data && <div className="message-field">{data.message}</div>
           )}
         </div>
       )
-    }
+  )
+}
 
           <div></div> {/*needed to have Summary always on left and save/cancel always right*/}
           <div className="text-edit-buttons">
