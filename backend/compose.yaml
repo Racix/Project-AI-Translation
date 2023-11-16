@@ -127,31 +127,6 @@ services:
     env_file:
       - .env
 
-  summarization:
-    image: summarization:latest
-    build: 
-      context: summarization
-      dockerfile: Dockerfile 
-    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
-    depends_on:
-      - db
-    stdin_open: true
-    tty: true
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: 1
-            capabilities: [gpu]
-    ports:
-      - "${SUMMARIZATION_PORT_HOST}:${API_PORT_GUEST}"
-    networks:
-      backend_network:
-        ipv4_address: ${SUMMARIZATION_ADDRESS}
-    env_file:
-      - .env
-      
 networks:
   backend_network:
     ipam:
