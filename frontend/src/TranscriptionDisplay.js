@@ -2,10 +2,14 @@ import React, { useState, useEffect } from "react";
 import "./styles/TranscriptionDisplay.css";
 import penIcon from "./img/penIcon.svg";
 import { useParams } from "react-router-dom";
+import testfile from "./testfile.json"; //change to your testfile
 
 function TranscriptionDisplay() {
+  const [testing] = useState(false); //set to true to use element 'testfile' as outprint (limited functionality)
   const { id } = useParams();
   const [transcriptionData, setTranscriptionData] = useState([]);
+  const [originalTransData, setOriginalTransData] = useState([]);
+  const [summaryData, setSummaryData] = useState("");
   const [speakerMap, setSpeakerMap] = useState({});
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
@@ -13,6 +17,8 @@ function TranscriptionDisplay() {
   const [tempSpeaker, setTempSpeaker] = useState("");
   const [tempText, setTempText] = useState("");
   const [editingSegmentIndex, setEditingSegmentIndex] = useState(null);
+  const [textChanged, setTextChanged] = useState(false);
+  const [summaryVisible, setSummaryVisible] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -21,6 +27,12 @@ function TranscriptionDisplay() {
   }, [BASE_URL]);
 
   const fetchFileContent = async () => {
+    if (testing) {
+      setTranscriptionData(testfile.message.diarization.segments)
+      setOriginalTransData(testfile.message.diarization.segments)
+      setSummaryData(testfile.message.summary)
+      return
+    }
     try {
       const response = await fetch(
         `http://${BASE_URL}/media/${id}/analysis`
@@ -28,7 +40,10 @@ function TranscriptionDisplay() {
       if (response.ok) {
         const data = await response.json(); // First parse the entire JSON response
         const segments = data.message.diarization.segments; // Then access the required properties
+        const summary = data.message.summary;
         setTranscriptionData(segments);
+        setOriginalTransData(segments);
+        setSummaryData(summary);
       }
     } catch (error) {
       console.error("Error fetching file content.", error);
@@ -39,7 +54,6 @@ function TranscriptionDisplay() {
     const payload = {
       "diarization.segments": transcriptionData,
     };
-    console.log(JSON.stringify(payload));
     try {
       const response = await fetch(
         `http://${BASE_URL}/media/${id}/analysis`,
@@ -53,6 +67,7 @@ function TranscriptionDisplay() {
       );
       if (response.ok) {
         alert("File saved successfully!");
+        setTextChanged(false);
       }
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -62,17 +77,30 @@ function TranscriptionDisplay() {
       const result = await response.json();
       console.log("Success:", result);
     } catch (error) {
+      alert("Could not save file");
       console.error("Error uploading transcription edits:", error);
     }
   };
 
+  const cancelTranscriptionEdits = () => {
+    setTextChanged(false)
+    setTranscriptionData(originalTransData)
+  }
+
   const unfocusEditingBlocks = () => {
-    setEditingSegmentIndex(null)
     setEditingIndex(null)
+    setEditingSegmentIndex(null);
+    setEditingIndex(null);
+    setTempSpeaker("");
+    setTempText("");
 
   }
 
   const startEditing = (index, speaker) => {
+    if(index === editingSegmentIndex) {
+      unfocusEditingBlocks();
+      return
+    }
     unfocusEditingBlocks();
     setEditingSegmentIndex(index); // Set the index of the segment being edited
     setTempSpeaker(speaker);
@@ -86,6 +114,7 @@ function TranscriptionDisplay() {
   };
 
   const saveText = (index) => {
+    setTextChanged(true);
     const updatedTranscriptionData = [...transcriptionData];
     updatedTranscriptionData[index] = {
       ...updatedTranscriptionData[index],
@@ -140,13 +169,45 @@ function TranscriptionDisplay() {
   return (
     <div className="Display">
       <h1>Transcription App</h1>
+      {testing &&
+       <h2>testing mode is active</h2>
+      }
       <div>
-        <button
-          onClick={() => uploadTranscriptionEdits()}
-          className="save-button"
-        >
-          Save Changes
-        </button>
+        <div className="transcription-buttons-container">
+          {summaryData &&
+            <button
+              onClick={() => setSummaryVisible(!summaryVisible)}
+              className="summary-button blue-button"
+            >
+              Summary
+            </button>
+          }
+          <div></div> {/*needed to have Summary always on left and save/cancel always right*/}
+          <div className="text-edit-buttons">
+          {textChanged &&
+            <button
+              onClick={() => cancelTranscriptionEdits()}
+              className="cancel-button blue-button"
+            >
+              Cancel
+            </button>
+          }
+          { textChanged &&
+            <button
+              onClick={() => uploadTranscriptionEdits()}
+              className="save-button blue-button"
+            >
+              Save Changes
+            </button>
+          }
+          </div>
+          
+        </div>
+        {summaryVisible &&
+          <div className="summary-box">
+            {summaryData}
+          </div>
+        }
         {transcriptionData &&
           transcriptionData.map((item, index) => {
             const currentSpeaker = speakerMap[item.speaker] || item.speaker;
@@ -174,7 +235,7 @@ function TranscriptionDisplay() {
                         
                         />
                         <button
-                          className="change-label-button"
+                          className="change-label-button blue-button"
                           onClick={() =>
                             handleChangeCurrentSpeakerLabelConfirm()
                           }
@@ -182,7 +243,7 @@ function TranscriptionDisplay() {
                           Change this label
                         </button>
                         <button
-                          className="change-label-button"
+                          className="change-label-button blue-button"
                           onClick={() =>
                             handleChangeAllSpeakerLabelsConfirm(tempSpeaker)
                           }
@@ -207,8 +268,8 @@ function TranscriptionDisplay() {
                         value={tempText}
                         onChange={(e) => setTempText(e.target.value)}
                         onKeyDown={(e) => 
-                          ((e.key == "Enter") && saveText(index)) ||
-                            e.key == "Escape" && unfocusEditingBlocks()
+                          ((e.key === "Enter") && saveText(index)) ||
+                            (e.key === "Escape" && unfocusEditingBlocks())
                                   }
                       />
                       <div className="speaker-tag">speaker: </div>
@@ -218,8 +279,8 @@ function TranscriptionDisplay() {
                         value={tempSpeaker}
                         onChange={(e) => setTempSpeaker(e.target.value)}
                         onKeyDown={(e) => 
-                          ((e.key == "Enter") && saveText(index)) ||
-                            e.key == "Escape" && unfocusEditingBlocks()
+                          ((e.key === "Enter") && saveText(index)) ||
+                            (e.key === "Escape" && unfocusEditingBlocks())
                                   }  
                       />
                     </>
