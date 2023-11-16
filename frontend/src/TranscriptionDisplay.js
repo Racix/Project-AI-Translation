@@ -12,19 +12,21 @@ function TranscriptionDisplay() {
   const [summaryData, setSummaryData] = useState("");
   const [speakerMap, setSpeakerMap] = useState({});
   const [hoveredIndex, setHoveredIndex] = useState(null);
-
+  const [isDisabled, setIsDisabled] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempSpeaker, setTempSpeaker] = useState("");
   const [tempText, setTempText] = useState("");
   const [editingSegmentIndex, setEditingSegmentIndex] = useState(null);
   const [textChanged, setTextChanged] = useState(false);
   const [summaryVisible, setSummaryVisible] = useState(false);
+  const [data, setData] = useState(null);
+  const [buttonClicked, setButtonClicked] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     fetchFileContent();
-  }, [BASE_URL]);
+  }, [BASE_URL, data]);
 
   const fetchFileContent = async () => {
     if (testing) {
@@ -81,6 +83,69 @@ function TranscriptionDisplay() {
       alert("Could not save file");
       console.error("Error uploading transcription edits:", error);
     }
+  };
+
+  const startSummarize = async (ws) => {
+    try {
+      const response = await fetch(
+        `http://${BASE_URL}/media/${id}/analysis/summary`,
+        {
+          method: "POST",
+        }
+      );
+      if (!response.ok) {
+        alert("could not start analysis (if it exists, it needs to be deleted before a new analysis can be done)");
+        ws.close()
+      }
+    } catch (error) {
+      console.error("Error fetching file content.", error);
+      ws.close()
+    }
+  } 
+  const processFile = async () => {
+    const ws = new WebSocket(`ws://${BASE_URL}/ws/analysis/${id}`);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected!");
+      setIsDisabled(true);
+      startSummarize(ws);
+    };
+
+    ws.onmessage = (event) => {
+      const receivedData = JSON.parse(event.data);
+      setData(receivedData); // Process the received data as needed
+      console.log(receivedData);
+      console.log(receivedData.status);
+      if (receivedData.status !== 200) {
+        ws.close();
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket Error:", error);
+      ws.close();
+    };
+
+    ws.onclose = (event) => {
+      if (event.wasClean) {
+        console.log("WebSocket closed cleanly");
+      } else {
+        console.error("WebSocket connection died");
+      }
+      setSummaryVisible(true)
+      setIsDisabled(false);
+    };
+
+    return () => {
+      ws.close();
+    };
+  };
+  const handleClick = (fileId) => {
+    if (isDisabled) {
+      return;
+    }
+    setButtonClicked(true)
+    processFile(fileId);
   };
 
   const cancelTranscriptionEdits = () => {
@@ -175,14 +240,35 @@ function TranscriptionDisplay() {
       }
       <div>
         <div className="transcription-buttons-container">
-          {summaryData &&
-            <button
-              onClick={() => setSummaryVisible(!summaryVisible)}
-              className="summary-button blue-button"
-            >
-              Summary
-            </button>
-          }
+        {
+        summaryData
+        ? (
+        // If summaryData is true, render this button
+        <button
+          onClick={() => setSummaryVisible(!summaryVisible)}
+          className="summary-button blue-button"
+        >
+          Summary
+        </button>
+      )
+    : (
+        // If summaryData is false, render something else here
+        <div>
+          {!buttonClicked ? (
+          <button
+          className="summary-button blue-button"
+          onClick={() => handleClick()}>
+            Summarize
+          </button>
+          ): (
+            data && (
+              <div className="message-field">{data.message}</div>
+            )
+          )}
+        </div>
+      )
+    }
+
           <div></div> {/*needed to have Summary always on left and save/cancel always right*/}
           <div className="text-edit-buttons">
           {textChanged &&

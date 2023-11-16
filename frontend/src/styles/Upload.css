@@ -97,6 +97,7 @@
   border: 2px;
   padding: 8px;
   cursor: default;
+  border-radius: 4px;
 }
 
 .delete-media-button,

@@ -20,7 +20,6 @@ async def transcribe_media_file(json_data: str = Form(...)):
         json.dump(transcription, tmp_file, ensure_ascii=False, indent=4)
         tmp_file_path = tmp_file.name
     try:
-        print("hello")
         res = sm.create_summarize(tmp_file_path)
     except Exception as e:
         #print(transcription)

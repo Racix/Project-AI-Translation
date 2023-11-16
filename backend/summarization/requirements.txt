@@ -1,7 +1,5 @@
 llama-index 
 transformers
-accelerate 
-bitsandbytes
 scipy
 uvicorn==0.23.2
 ipython
