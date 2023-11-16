@@ -39,8 +39,9 @@ function TranscriptionDisplay() {
       );
       if (response.ok) {
         const data = await response.json(); // First parse the entire JSON response
-        const segments = data.message.diarization.segments; // Then access the required properties
-        const summary = data.message.summary;
+        console.log("TYOO: ", )
+        const segments = data.diarization.segments; // Then access the required properties
+        const summary = data.summary;
         setTranscriptionData(segments);
         setOriginalTransData(segments);
         setSummaryData(summary);

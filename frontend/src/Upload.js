@@ -21,7 +21,8 @@ function Upload() {
       const response = await fetch(`http://${BASE_URL}/media`);
       if (response.ok) {
         const data = await response.json();
-        setFileList(data.message);
+        console.log("YOOOOOOOOOOOOOOOOOOOOOOOOO", data)
+        setFileList(data);
       }
     } catch (error) {
       console.error("Error fetching file list.", error);
