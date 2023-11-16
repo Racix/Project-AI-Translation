@@ -163,35 +163,6 @@ async def analyze(file_path: str, media_id: str):
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-    # Summarize
-    """
-    try:
-        async with aiohttp.ClientSession(timeout=session_timeout) as session:
-            status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
-            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-            with open(file_path, 'rb') as file:
-                form_new = aiohttp.FormData()
-                form_new.add_field('json_data', json.dumps(diarization), content_type='application/json')
-                form_new.add_field('file', file)
-                async with session.post(summarize_url, data=form_new) as response:
-                    if response.status == status.HTTP_201_CREATED:
-                        summarize = await response.json()
-                        status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
-                    else:
-                        status_data = {"status": response.status, "message": "Summarization error."}
-                        return
-    except TimeoutError as e:
-        print("TimeoutError while summarizing:", e)
-        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Summarization timed out."}
-        return
-    except Exception as e:
-        print("Unkonwn error while summarizing:", e)
-        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Summarization error."}
-        return
-    finally:
-        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-
-    diarization['summary'] = summarize.get('summarization', {}).get('response', '')"""
     analysis_col.delete_one({"media_id": ObjectId(media_id)})
     diarization['media_id'] = ObjectId(media_id)
     analysis_col.insert_one(diarization)
@@ -321,7 +292,7 @@ async def do_summary(file_path: str, media_id: str):
         return
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-        
+
     analysis_info['summary'] = summarize
     analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
 
