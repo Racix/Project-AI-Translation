@@ -121,10 +121,8 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
     diarize_url = f"http://{os.environ['DIARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/diarize"
-    summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
     transcription = {}
     diarization = {}
-    summarize = {}
     status_data = {}
 
     # Crete the mono .wav version if not exists
@@ -324,31 +322,34 @@ async def get_media_analysis(media_id: str):
     try_find_media(media_id)
     analysis_info = try_find_analysis(media_id)
 
-    return {"message": analysis_info}
+    return analysis_info.get('summary', '')
 
 
 async def do_summary(file_path: str, media_id: str):
+    timeout_seconds = 300
+    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
     summarize = {}
     try_find_media(media_id)
     analysis_info = try_find_analysis(media_id)
 
     try:
-        status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
-        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-        with open(file_path, 'rb') as file:
-            form_new = aiohttp.FormData()
-            form_new.add_field('json_data', json.dumps(analysis_info), content_type='application/json')
-            form_new.add_field('file', file)
+            with open(file_path, 'rb') as file:
+                form_new = aiohttp.FormData()
+                form_new.add_field('json_data', json.dumps(analysis_info), content_type='application/json')
+                form_new.add_field('file', file)
 
-            async with aiohttp.request('POST', summarize_url, data=form_new) as response:
-                if response.status == status.HTTP_201_CREATED:
-                    summarize = await response.json()
-                    status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
-                else:
-                    status_data = {"status": response.status, "message": "Summarization error."}
-                    return
+                async with aiohttp.request('POST', summarize_url, data=form_new) as response:
+                    if response.status == status.HTTP_201_CREATED:
+                        summarize = await response.json()
+                        status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
+                    else:
+                        status_data = {"status": response.status, "message": "Summarization error."}
+                        return
     except TimeoutError as e:
         print("TimeoutError while summarizing:", e)
         status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Summarization timed out."}
@@ -359,9 +360,11 @@ async def do_summary(file_path: str, media_id: str):
         return
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
     analysis_info['summary'] = summarize.get('summarization', {}).get('response', '')
     analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
-
+    status_data = {"status": status.HTTP_201_CREATED, "message": "Summarization done."}
+    asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
 
 def is_media_file(file: UploadFile):
