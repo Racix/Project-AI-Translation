@@ -323,12 +323,8 @@ async def get_media_analysis(media_id: str):
     # Check if media and analysis exists
     try_find_media(media_id)
     analysis_info = try_find_analysis(media_id)
-    analysis_info['summary'] = "This is a summary"
-    analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
 
-    updated_analysis_info = try_find_analysis(media_id)
-
-    return {"message": updated_analysis_info}
+    return {"message": analysis_info}
 
 
 async def do_summary(file_path: str, media_id: str):
@@ -363,8 +359,7 @@ async def do_summary(file_path: str, media_id: str):
         return
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-
-    analysis_info['summary'] = summarize
+    analysis_info['summary'] = summarize.get('summarization', {}).get('response', '')
     analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
 
 
