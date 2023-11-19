@@ -1,5 +1,9 @@
 # Weekly blog
 
+## Friday - 2023-11-17
+During the past three weeks we have created a microservice out of the translation and we are working on making a summary-of-transcriptions functionallity into a microservice using the language model LLaMA.
+We have also been working on live-transcription and now have a first version working prototype. We have also been working on implementing a language detection for the whisper model that can handle bigger audio input. 
+
 ## Friday - 2023-10-27
 
 During the past two weeks, most of our time has been dedicated to presentations and exams. Nevertheless, progress has been made.
