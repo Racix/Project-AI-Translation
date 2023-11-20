@@ -10,12 +10,23 @@ class WebSocket:
         self.websocket = None
 
     async def connect(self):
-        print("Connecting ws")
+        print("Connecting ws...")
         self.websocket = await websockets.connect(self.uri)
+        print("Connected ws")
 
     async def send_audio(self, audio=None):
-        print("Sending")
-        await self.websocket.send(audio)
+        print(f"Sending... {len(audio)}", end="")
+        try:
+            await self.websocket.send(audio)
+            print("Sent")
+        except asyncio.CancelledError:
+            print("Task was cancelled.")
+        except websockets.exceptions.ConnectionClosedError as e:
+            print(f"Connection closed unexpectedly: {e.code}, {e.reason}")
+            await self.connect()
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            # Handle other unexpected errors
 
     async def close(self):
         if self.websocket:
