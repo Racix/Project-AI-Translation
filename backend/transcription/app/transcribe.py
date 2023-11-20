@@ -17,10 +17,9 @@ def transcribe(file_path: str) -> dict:
             device="cpu",
         )
         #Used to detect the original language of the file
-        To_detect_language = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, batch_size=32, generate_kwargs={"task": "transcribe"})
-        elements = To_detect_language['chunks']
-        Text_To_be_detect = ' '.join([chunk['text'] for chunk in elements])
-        detected_language = detect(Text_To_be_detect) 
+        transcription_result = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, batch_size=32, generate_kwargs={"task": "transcribe"})
+        transcribed_text = ' '.join([chunk['text'] for chunk in transcription_result['chunks']])
+        detected_language = detect(transcribed_text)
                 
         #Transcribe to english
         transcription = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, batch_size=32, generate_kwargs={ "language": "en", "task": "transcribe"})        
