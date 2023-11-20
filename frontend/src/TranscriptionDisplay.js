@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import "./styles/TranscriptionDisplay.css";
 import penIcon from "./img/penIcon.svg";
 import { useParams } from "react-router-dom";
-import testfile from "./testfile.json"; //change to your testfile
+import testfile from "./testfil.json"; //change to your testfile
 
 function TranscriptionDisplay() {
-  const [testing] = useState(false); //set to true to use element 'testfile' as outprint (limited functionality)
+  const [testing] = useState(true); //set to true to use element 'testfile' as outprint (limited functionality)
   const { id } = useParams();
   const [transcriptionData, setTranscriptionData] = useState([]);
   const [originalTransData, setOriginalTransData] = useState([]);
@@ -240,34 +240,33 @@ function TranscriptionDisplay() {
       }
       <div>
         <div className="transcription-buttons-container">
-        {
-  summaryData
-  ? (
-      // If summaryData is true
-      <button
-        onClick={() => setSummaryVisible(!summaryVisible)}
-        className="summary-button blue-button"
-      >
-        Summary
-      </button>
-    )
-  : ( // If false, check if there is transcription
-      transcriptionData.length > 0 && (
-        <div>
-          {!buttonClicked ? (
-            <button
-              className="summary-button blue-button"
-              onClick={() => handleClick()}>
-              Summarize
-            </button>
-          ) : (
-            data && <div className="message-field">{data.message}</div>
-          )}
-        </div>
-      )
-  )
-}
-
+          {
+            summaryData
+            ? (
+                // If summaryData is true
+                <button
+                  onClick={() => setSummaryVisible(!summaryVisible)}
+                  className="summary-button blue-button"
+                >
+                  Summary
+                </button>
+              )
+            : ( // If false, check if there is transcription
+                transcriptionData.length > 0 && (
+                  <div>
+                    {!buttonClicked ? (
+                      <button
+                        className="summary-button blue-button"
+                        onClick={() => handleClick()}>
+                        Summarize
+                      </button>
+                    ) : (
+                      data && <div className="message-field">{data.message}</div>
+                    )}
+                  </div>
+                )
+            )
+          }
           <div></div> {/*needed to have Summary always on left and save/cancel always right*/}
           <div className="text-edit-buttons">
           {textChanged &&
