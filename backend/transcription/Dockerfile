@@ -12,14 +12,7 @@ RUN pip install --no-cache-dir --upgrade -r /transcription/requirements.txt
 
 COPY ./app /transcription/app
 
-COPY ./app /transcription/app
-
-# Install FFmpeg
 RUN apt-get update && apt-get install -y ffmpeg
-
-# ... (rest of your Dockerfile)
-
-
 
 # EXPOSE 8080
 
