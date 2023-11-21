@@ -11,17 +11,7 @@ import io
 
 # https://github.com/s0d3s/PyAudioWPatch/blob/master/examples/pawp_record_wasapi_loopback.py
 async def sound_driver():
-
-    # Set the audio parameters
-    FORMAT = pyaudio.paInt16
-    # CHUNK = 512
-    # RECORD_SECONDS = 10 # You can adjust the recording duration as needed
-    OUTPUT_FILENAME = "test.wav"
-
     audio = pyaudio.PyAudio()
-
-    SAMPLE_SIZE = audio.get_sample_size(FORMAT)
-    # print(SAMPLE_SIZE)
 
     wasapi_info = audio.get_host_api_info_by_type(pyaudio.paWASAPI)
     print(wasapi_info)
@@ -54,6 +44,9 @@ async def sound_driver():
     n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
     # print("samle_rate", SAMPLE_RATE, "n_channels", n_channels)
     
+    # Set the audio parameters
+    FORMAT = pyaudio.paInt16
+    SAMPLE_SIZE = audio.get_sample_size(FORMAT)
     SAMPLE_RATE = 16000
     NUMBER_CHANNELS = 1
     SPEAKER_RATIO = default_speakers["defaultSampleRate"] / SAMPLE_RATE
@@ -61,14 +54,19 @@ async def sound_driver():
     CHUCK_DURATION = 30 # ms
     SPEAKER_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * SPEAKER_RATIO / 1000) * default_speakers["maxInputChannels"]
     MIC_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * MIC_RATIO / 1000) * default_mic["maxInputChannels"]
+    
     print(f"SAMPLE_RATE: {SAMPLE_RATE}, NUMBER_CHANNELS: {NUMBER_CHANNELS}, SPEAKER_RATIO: {SPEAKER_RATIO}, MIC_RATIO: {MIC_RATIO}, CHUNK_DURATION: {CHUCK_DURATION}, SPEAKER_CHUNK: {SPEAKER_CHUNK}, MIC_CHUNK: {MIC_CHUNK}")
-    # 48000 / 100 = 480   1s = 480000   0.01s =  480  
-    # 44100 / 100 = 441   
 
-    speaker_file = wave.open(OUTPUT_FILENAME, 'wb')
-    speaker_file.setnchannels(NUMBER_CHANNELS)
-    speaker_file.setsampwidth(SAMPLE_SIZE)
-    speaker_file.setframerate(SAMPLE_RATE)   
+    # Test file for debug
+    all_file = wave.open("all_test.wav", 'wb')
+    all_file.setnchannels(NUMBER_CHANNELS)
+    all_file.setsampwidth(SAMPLE_SIZE)
+    all_file.setframerate(SAMPLE_RATE)   
+
+    send_file = wave.open("send_test.wav", 'wb')
+    send_file.setnchannels(NUMBER_CHANNELS)
+    send_file.setsampwidth(SAMPLE_SIZE)
+    send_file.setframerate(SAMPLE_RATE)   
 
     speaker_stream = audio.open(format=FORMAT,
         channels=default_speakers["maxInputChannels"],
@@ -85,8 +83,6 @@ async def sound_driver():
         input=True
     )
 
-    print("Recording...")
-
     websocket_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(websocket_loop)
 
@@ -97,9 +93,11 @@ async def sound_driver():
     send_data = np.empty(0, dtype=np.int16)
     loop_num = 0
     test_file_counter = 0
+    last_quiet_chunk = []
 
     started_talking = False
     try:
+        print("Recording...")
         while 1== 1:
             # Read data from speaker and mic
             speaker_data = speaker_stream.read(SPEAKER_CHUNK)
@@ -139,48 +137,56 @@ async def sound_driver():
             combined_data = speaker_data + mic_data
             # print("Combined stats:", combined_data.shape, np.min(combined_data), np.max(combined_data), np.mean(combined_data))
 
-            speaker_file.writeframes(combined_data)
+            all_file.writeframes(combined_data)
 
-            if not is_talking(combined_data, SAMPLE_RATE):
-
-                if started_talking:
-                    send_data = np.append(send_data, combined_data).astype(np.int16)
-
-                # if voice_activity_last_loop:
-                loop_num+= 1
-                if loop_num >= 50 and send_data.size >= 50000:
-                    # send_data = np.insert(send_data, 0, int(SAMPLE_RATE/100)).astype(np.int16)
-                    # send_data = np.insert(send_data, 0, NUMBER_CHANNELS).astype(np.int16)
-                    # np.savetxt(f"test/test_{test_file_counter}.txt", send_data)
-
-                    # write each sent audio
-                    test_file = wave.open(f"test/test_{test_file_counter}.wav", 'wb')
-                    test_file.setnchannels(NUMBER_CHANNELS)
-                    test_file.setsampwidth(SAMPLE_SIZE)
-                    test_file.setframerate(SAMPLE_RATE)  
-                    # test_file.writeframes(send_data[2:])
-                    test_file.writeframes(send_data)
-                    test_file.close()
-                    test_file_counter += 1 
-                                
-                    asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
-                    # print("send audio")
-                    started_talking = False
-                    send_data = np.empty(0, dtype=np.int16)
-                    loop_num = 0
-                    await asyncio.sleep(0.01)
-
-                print(".", end="")
-                # voice_activity_last_loop = False
-
+            if is_talking(combined_data, SAMPLE_RATE):
+                
+                print("!", end="")
+                # voice_activity_last_loop = True
+                # print("Audio!")
+                loop_num = 0
+                send_data = np.append(send_data, combined_data)
+                started_talking  = True
                 continue
+
             
-            print("!", end="")
-            # voice_activity_last_loop = True
-            # print("Audio!")
-            loop_num = 0
-            send_data = np.append(send_data, combined_data)
-            started_talking  = True
+            if started_talking:
+                # the small silence between talking
+                send_data = np.append(send_data, combined_data).astype(np.int16)
+            else:
+                last_quiet_chunk = combined_data
+
+            # if voice_activity_last_loop:
+            loop_num+= 1
+            if loop_num >= 10 and started_talking:
+                # send_data = np.insert(send_data, 0, int(SAMPLE_RATE/100)).astype(np.int16)
+                # send_data = np.insert(send_data, 0, NUMBER_CHANNELS).astype(np.int16)
+                # np.savetxt(f"test/test_{test_file_counter}.txt", send_data)
+
+                # write each sent audio
+                test_file = wave.open(f"test/test_{test_file_counter}.wav", 'wb')
+                test_file.setnchannels(NUMBER_CHANNELS)
+                test_file.setsampwidth(SAMPLE_SIZE)
+                test_file.setframerate(SAMPLE_RATE)
+                test_file.writeframes(send_data)
+                test_file.close()
+                test_file_counter += 1 
+
+                send_file.writeframes(send_data)
+                            
+                # print(last_quiet_chunk)
+                send_data = np.insert(send_data, 0, last_quiet_chunk)
+                asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
+                # print("send audio")
+                started_talking = False
+                send_data = np.empty(0, dtype=np.int16)
+                loop_num = 0
+                await asyncio.sleep(0.01)
+
+            if started_talking:
+                print(".", end="") 
+            else: 
+                print(",", end="")
 
     except KeyboardInterrupt:
         # Graceful exit on keyboard interrupt
@@ -193,7 +199,8 @@ async def sound_driver():
         mic_stream.close()
         audio.terminate()
 
-        speaker_file.close()
+        all_file.close()
+        send_file.close()
         await ws.close()
         print("Done!")
 
