@@ -326,11 +326,11 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
             data = await websocket.receive_bytes()
             data = np.frombuffer(data, dtype=np.int16)
 
-            queue.append(data[2:])
+            queue.append(data)
             if len(queue) > queue_size:
                 queue.pop(0)
 
-            data = bytes_to_wave(data[:2], queue)
+            data = bytes_to_wave(data, queue)
 
             
             form_data = aiohttp.FormData()
@@ -372,8 +372,8 @@ def bytes_to_wave(params, queue):
 
     
     print("InitDATA: ", queue)
-    n_channels = params[0]
-    sample_rate = params[1]*100
+    n_channels = 1
+    sample_rate = 16000
     
     print("laterDAta: ", queue)
     print("n_channels", n_channels, "sample_rate", sample_rate)
