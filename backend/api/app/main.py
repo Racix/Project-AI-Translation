@@ -315,13 +315,23 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
+    queue_size  = 3
+    queue = []
+    
 
     await liveTransciptionManager.connect(websocket, live_id)
     
     try:
         while True:
             data = await websocket.receive_bytes()
-            data = bytes_to_wave(data)
+            data = np.frombuffer(data, dtype=np.int16)
+
+            queue.append(data[2:])
+            if len(queue) > queue_size:
+                queue.pop(0)
+
+            data = bytes_to_wave(data[:2], queue)
+
             
             form_data = aiohttp.FormData()
             form_data.add_field('file', data, filename=f'live_id_{live_id}_{hash(data)}.wav', content_type='audio/wav')
@@ -357,15 +367,15 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
         print(f"Client {websocket.client} disconnected")
 
     
-def bytes_to_wave(data):
+def bytes_to_wave(params, queue):
     # Ensure the array is of type int16
 
-    data = np.frombuffer(data, dtype=np.int16)
-    print("InitDATA: ", data)
-    n_channels = data[0]
-    sample_rate = data[1]*100
-    data = data[2:]
-    print("laterDAta: ", data)
+    
+    print("InitDATA: ", queue)
+    n_channels = params[0]
+    sample_rate = params[1]*100
+    
+    print("laterDAta: ", queue)
     print("n_channels", n_channels, "sample_rate", sample_rate)
     
     # Create a wave file in memory
@@ -374,6 +384,8 @@ def bytes_to_wave(data):
             wave_file.setnchannels(n_channels)  # 1 channel (mono)
             wave_file.setsampwidth(2)   # 2 bytes per sample (16-bit PCM)
             wave_file.setframerate(sample_rate)
+
+            data = np.concatenate(queue)
             wave_file.writeframes(data.tobytes())
             
         
