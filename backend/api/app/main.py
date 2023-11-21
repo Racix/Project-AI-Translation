@@ -19,6 +19,8 @@ from pydub import AudioSegment
 from starlette.responses import FileResponse
 from websockets.exceptions import ConnectionClosedOK
 
+SAMPLE_RATE = 16000
+
 app = FastAPI()
 
 app.add_middleware(
@@ -315,7 +317,8 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
-    queue_size  = 3
+    max_queue_len  = 17
+    min_queue_len  = 6
     queue = []
     
 
@@ -327,10 +330,21 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
             data = np.frombuffer(data, dtype=np.int16)
 
             queue.append(data)
-            if len(queue) > queue_size:
-                queue.pop(0)
 
-            data = bytes_to_wave(data, queue)
+            queue_len = queue_length(queue)
+            print("queue_len before pop", queue_len)
+
+            queue_len = queue_length(queue)
+
+            while queue_len > max_queue_len and queue_len-(len(queue[0])/SAMPLE_RATE) > min_queue_len:
+                queue.pop(0)
+                queue_len = queue_length(queue)
+
+
+            queue_len = queue_length(queue)
+            print("queue_len after pop", queue_len)
+
+            data = bytes_to_wave(queue)
 
             
             form_data = aiohttp.FormData()
@@ -367,23 +381,23 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
         print(f"Client {websocket.client} disconnected")
 
     
-def bytes_to_wave(params, queue):
+def bytes_to_wave(queue):
     # Ensure the array is of type int16
 
     
-    print("InitDATA: ", queue)
+    # print("InitDATA: ", queue)
     n_channels = 1
-    sample_rate = 16000
     
-    print("laterDAta: ", queue)
-    print("n_channels", n_channels, "sample_rate", sample_rate)
+    
+    # print("laterDAta: ", queue)
+    # print("n_channels", n_channels, "sample_rate", SAMPLE_RATE)
     
     # Create a wave file in memory
     with io.BytesIO() as wave_buffer:
         with wave.open(wave_buffer, 'w') as wave_file:
             wave_file.setnchannels(n_channels)  # 1 channel (mono)
             wave_file.setsampwidth(2)   # 2 bytes per sample (16-bit PCM)
-            wave_file.setframerate(sample_rate)
+            wave_file.setframerate(SAMPLE_RATE)
 
             data = np.concatenate(queue)
             wave_file.writeframes(data.tobytes())
@@ -395,6 +409,15 @@ def bytes_to_wave(params, queue):
                 output_file.write(wave_data)
 
         return wave_data
+
+
+def queue_length(queue):
+    """Queue lenght in seconds"""
+    length = 0
+    for sound in queue:
+        length += len(sound)
+
+    return length/SAMPLE_RATE
 
 
 def is_media_file(file: UploadFile):
