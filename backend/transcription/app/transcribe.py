@@ -13,7 +13,8 @@ def transcribe(file_path: str) -> dict:
         whisper_pipeline = pipeline(
             "automatic-speech-recognition",
             model=MODEL_NAME,
-            chunk_length_s=30,       
+            chunk_length_s=30,
+            device=device,        
         )                
         #Transcribe the video to the original language
         transcription = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, batch_size=32, generate_kwargs={"task": "transcribe"})        
