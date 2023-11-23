@@ -31,6 +31,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:
+        os.remove(file_path)
         ut.delete_dirs(timestamp)
 
     return {"diarization": transcription}
