@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.diarization.name }}
+  labels:
+    name: {{ .Values.diarization.name }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      name: {{ .Values.diarization.name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.diarization.name }}
+    spec:
+      containers:
+        - name: {{ .Values.diarization.name }}
+          image: "{{ .Values.diarization.repository }}:{{ .Values.diarization.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.diarization.pullPolicy }}
+          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
+          ports:
+            - name: diarization
+              containerPort: {{ .Values.diarization.port }}
+              protocol: TCP
+          envFrom:
+          - configMapRef:
+                name: env
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

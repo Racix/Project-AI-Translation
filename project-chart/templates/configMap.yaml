@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: env
+data:
+    API_PORT_GUEST: "8000"
+    API_PORT_HOST: "8080"
+    API_ADDRESS: "api.default.svc.cluster.local"
+    UPLOAD_DIR: "/media"
+    MONGO_PORT: "27017"
+    MONGO_ADDRESS: "db.default.svc.cluster.local"
+    TRANSCRIPTION_PORT_HOST: "8081"
+    TRANSCRIPTION_ADDRESS: "transcription.default.svc.cluster.local"
+    DIARIZATION_PORT_HOST: "8082"
+    DIARIZATION_ADDRESS: "diarization.default.svc.cluster.local"
+    #TRANSLATION_PORT_HOST: "8083"
+    #TRANSLATION_ADDRESS: "translation.default.svc.cluster.local"
+    #SUMMARIZATION_PORT_HOST: "8084"
+    #SUMMARIZATION_ADDRESS: "summarization.default.svc.cluster.local" 
+

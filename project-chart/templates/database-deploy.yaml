@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.database.name }}
+  labels:
+    name: {{ .Values.database.name }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      name: {{ .Values.database.name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.database.name }}
+    spec:
+      containers:
+        - name: {{ .Values.database.name }}
+          image: "{{ .Values.database.repository }}:{{ .Values.database.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.database.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.database.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+

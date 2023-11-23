@@ -1,0 +1,64 @@
+# Default values for project-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+frontend:
+  repository: tonytonfisk/frontend-frontend
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+  name: frontend
+  port: 80
+
+service:
+  type: ClusterIP  # or the desired service type (e.g., NodePort, LoadBalancer)
+    # or the desired port number for your service
+
+api:
+  repository: tonytonfisk/api
+  pullPolicy: Always
+  tag: "latest"
+  port: 8080
+  name: api
+  port_guest: 8000
+
+database:
+  repository: mongo
+  pullPolicy: IfNotPresent
+  tag: "latest"
+  port: 27017
+  name: db
+
+transcription:
+  repository: tonytonfisk/transcription
+  pullPolicy: IfNotPresent
+  tag: "latest"
+  port: 8081
+  name: "transcription"
+
+diarization:
+  repository: tonytonfisk/diarization
+  pullPolicy: IfNotPresent
+  tag: "latest"
+  name: diarziation
+  port: 8082
+
+resources: 
+  limits:
+    cpu: 2
+    memory: 4Gi
+  requests:
+    cpu: 1
+    memory: 4Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+ingress:
+  enabled: false

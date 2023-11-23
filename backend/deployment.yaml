@@ -14,21 +14,30 @@ spec:
     spec:
       containers:
       - name: backend-api
-        image: backend-api
+        image: tonytonfisk/api:latest
         ports:
         - containerPort: 8080  # Update this if your API listens on a different port
 
       - name: backend-db
-        image: backend-db
+        image: mongo:latest
         ports:
         - containerPort: 27017 #(Uncomment and update if your DB container needs to expose a port)
 
+      - name: backend-tra
+        image: tonytonfisk/transcription:latest
+        ports:
+        - containerPort: 8081  # Update this as per your app's requirement
+
       - name: backend-dia
-        image: backend-dia
+        image: tonytonfisk/diarization:latest
         ports:
         - containerPort: 8082  # Update this as per your app's requirement
 
-      - name: backend-tra
-        image: backend-tra
+      - name: frontend
+        image: tonytonfisk/frontend-frontend:latest
         ports:
-        - containerPort: 8081  # Update this as per your app's requirement
+        - containerPort: 3000  # Update this as per your app's requirement
+        command: [ "sleep" ]
+        args: [ "infinity" ]
+      imagePullSecrets:
+        - name: secret-key
