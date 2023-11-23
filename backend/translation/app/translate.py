@@ -8,9 +8,7 @@ language_codes = {"en", "sv", "fr", "es", "de", "ar", "zh", "zt", "nl", "fi", "h
 
 def install_language(from_language: str, to_language: str):
     from_code = from_language
-    print(from_code)
     to_code = to_language
-    print(to_code)
     argostranslate.package.update_package_index()
     available_packages = argostranslate.package.get_available_packages()
     package_to_install = next(
@@ -29,7 +27,6 @@ def translate_json(data: dict, from_language: str, to_language: str):
     return translated_text
 
 def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
-    print(data)
     if from_language not in language_codes:
         translation =  "Not a viable language"
         return translation
