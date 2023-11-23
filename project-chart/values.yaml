@@ -33,7 +33,7 @@ database:
 
 transcription:
   repository: tonytonfisk/transcription
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   tag: "latest"
   port: 8081
   name: "transcription"
@@ -42,7 +42,7 @@ diarization:
   repository: tonytonfisk/diarization
   pullPolicy: IfNotPresent
   tag: "latest"
-  name: diarziation
+  name: diarization
   port: 8082
 
 resources: 

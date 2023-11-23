@@ -7,7 +7,7 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.transcription.port }}
+    - port: {{ .Values.api.port_guest}}
       targetPort: {{ .Values.api.port_guest }}
       name: transcription
   selector:

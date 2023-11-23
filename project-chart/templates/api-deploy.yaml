@@ -35,3 +35,24 @@ spec:
               requests:
                 cpu: 1
                 memory: 1Gi
+          volumeMounts:
+            - mountPath: /media
+              name: media
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: media-volume
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
