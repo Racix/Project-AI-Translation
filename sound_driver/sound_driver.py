@@ -7,6 +7,7 @@ from vocie_activity import voice_activity, is_talking
 # from cli import get_arguments
 from send_audio import WebSocket
 from yaml import safe_load
+from datetime import datetime
 
 def main():
     config = safe_load(open("config.yaml"))
@@ -44,12 +45,14 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
     
     # print(f"SAMPLE_RATE: {SAMPLE_RATE}, NUMBER_CHANNELS: {NUMBER_CHANNELS}, SPEAKER_RATIO: {SPEAKER_RATIO}, MIC_RATIO: {MIC_RATIO}, CHUNK_DURATION: {CHUCK_DURATION}, SPEAKER_CHUNK: {SPEAKER_CHUNK}, MIC_CHUNK: {MIC_CHUNK}")
 
-    # Test file for debug
-    all_file = wave.open("all_test.wav", 'wb')
-    all_file.setnchannels(NUMBER_CHANNELS)
-    all_file.setsampwidth(SAMPLE_SIZE)
-    all_file.setframerate(SAMPLE_RATE)   
+    record_file_name = datetime.now().strftime("%d_%m_%Y_%H_%M_%S_inspelning.wav")
+    # record_file = wave.open(record_file_name, 'wb') # TODO uncomment when done
+    record_file = wave.open("all_test.wav", 'wb') # remove when done
+    record_file.setnchannels(NUMBER_CHANNELS)
+    record_file.setsampwidth(SAMPLE_SIZE)
+    record_file.setframerate(SAMPLE_RATE)   
 
+    # Test file for debug
     send_file = wave.open("send_test.wav", 'wb')
     send_file.setnchannels(NUMBER_CHANNELS)
     send_file.setsampwidth(SAMPLE_SIZE)
@@ -126,7 +129,7 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
 
             # await asyncio.sleep(10)
 
-            all_file.writeframes(combined_data) # write to file for debug
+            record_file.writeframes(combined_data) # write to file for debug
 
             if is_talking(combined_data, SAMPLE_RATE):
                 print("!", end="")
@@ -143,7 +146,7 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
                 last_quiet_chunk = combined_data
 
             loop_num+= 1
-            if loop_num >= 10 and started_talking:
+            if loop_num >= 3 and started_talking:
                 send_data = np.insert(send_data, 0, last_quiet_chunk)
                 send_file.writeframes(send_data) # write to debug file 
 
@@ -170,7 +173,7 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
         mic_stream.close()
         audio.terminate()
 
-        all_file.close()
+        record_file.close()
         send_file.close()
         await ws.close()
         print("Done!")

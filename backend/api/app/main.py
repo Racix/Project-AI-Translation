@@ -317,8 +317,8 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
-    max_queue_len  = 17
-    min_queue_len  = 6
+    max_queue_len  = 25
+    min_queue_len  = 15
     queue = []
     
 
