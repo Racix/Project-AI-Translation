@@ -1,12 +1,9 @@
 import asyncio
 import websockets
 
-# websocket_ip = "wss://socketsbay.com/wss/v2/1/demo/"
-websocket_ip = "ws://130.240.200.127:8080/ws/live-transcription/hej"
-
 class WebSocket:
-    def __init__(self):
-        self.uri = websocket_ip  # WebSocket server address
+    def __init__(self, websocket_ip, room_id):
+        self.uri = f"{websocket_ip}/{room_id}"
         self.websocket = None
 
     async def connect(self):

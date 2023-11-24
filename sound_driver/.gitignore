@@ -1,4 +1,7 @@
 # Ignore python enviroments
 .env
+/dist
+/build
+*.spec
 
 __pycache__/

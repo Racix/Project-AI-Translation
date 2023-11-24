@@ -1,0 +1,3 @@
+ip-address: ws://130.240.200.127:8080/ws/live-transcription
+speaker-id: # Add speaker id here to overwrite default
+mic-id: # Add mic id here to overwrite default
