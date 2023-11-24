@@ -19,29 +19,35 @@ async def sound_driver():
     default_speakers = audio.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
     # default_speakers = audio.get_device_info_by_index(22)
     default_mic = audio.get_device_info_by_index(wasapi_info["defaultInputDevice"])
-    print("default_speakers:", default_speakers["name"])
-    print("default_mic:", default_mic["name"])
 
     if not default_speakers["isLoopbackDevice"]:
+        found = False
         for loopback in audio.get_loopback_device_info_generator():
+            # print("loopback:   ", loopback)
             """
             Try to find loopback device with same name(and [Loopback suffix]).
             Unfortunately, this is the most adequate way at the moment.
             """
             if default_speakers["name"] in loopback["name"]:
                 default_speakers = loopback
+                found = True
                 break
-            else:
-                print("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
-                exit()
 
-    print(default_speakers["maxInputChannels"], default_speakers["defaultSampleRate"])
-    print(default_mic["maxInputChannels"], default_mic["defaultSampleRate"])
+        if not found:
+            print("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
+            exit()
+
+    
+    # print("default_speakers:", default_speakers)
+    # print("default_mic:", default_mic)
+
+    print("default_speakers:", default_speakers["index"], default_speakers["defaultSampleRate"], default_speakers["maxInputChannels"], default_speakers["name"])
+    print("default_mic:     ", default_mic["index"], default_mic["defaultSampleRate"], default_mic["maxInputChannels"], default_mic["name"])
 
     # number of channels to be higher or equalt to the max amount of channels or else weird stuff happend to the audio quality
     # sample_rate = default_speakers["defaultSampleRate"] if default_speakers["defaultSampleRate"] >= default_mic["defaultSampleRate"] else default_mic["defaultSampleRate"]
-    sample_rate = int(min(default_speakers["defaultSampleRate"], default_mic["defaultSampleRate"]))
-    n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
+    # sample_rate = int(min(default_speakers["defaultSampleRate"], default_mic["defaultSampleRate"]))
+    # n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
     # print("samle_rate", SAMPLE_RATE, "n_channels", n_channels)
     
     # Set the audio parameters
@@ -52,8 +58,8 @@ async def sound_driver():
     SPEAKER_RATIO = default_speakers["defaultSampleRate"] / SAMPLE_RATE
     MIC_RATIO = default_mic["defaultSampleRate"] / SAMPLE_RATE
     CHUCK_DURATION = 30 # ms
-    SPEAKER_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * SPEAKER_RATIO / 1000) * default_speakers["maxInputChannels"]
-    MIC_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * MIC_RATIO / 1000) * default_mic["maxInputChannels"]
+    SPEAKER_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * SPEAKER_RATIO / 1000) * 2 # I do not know why * 2 is needed but it does not work without ¯\_(ツ)_/¯
+    MIC_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * MIC_RATIO / 1000) * 2
     
     print(f"SAMPLE_RATE: {SAMPLE_RATE}, NUMBER_CHANNELS: {NUMBER_CHANNELS}, SPEAKER_RATIO: {SPEAKER_RATIO}, MIC_RATIO: {MIC_RATIO}, CHUNK_DURATION: {CHUCK_DURATION}, SPEAKER_CHUNK: {SPEAKER_CHUNK}, MIC_CHUNK: {MIC_CHUNK}")
 
@@ -107,35 +113,37 @@ async def sound_driver():
             speaker_data = np.fromstring(speaker_data, dtype=np.int16).astype(np.float32)
             mic_data = np.fromstring(mic_data, dtype=np.int16).astype(np.float32)
             # print("Original speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
-            # print("Original mic stats:", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
+            # print("Original mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
 
             speaker_data = np.reshape(speaker_data, (default_speakers["maxInputChannels"], SPEAKER_CHUNK))
             mic_data = np.reshape(mic_data, (default_mic["maxInputChannels"], MIC_CHUNK))
             # print("Reshaped speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
-            # print("Reshaped mic stats:", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
+            # print("Reshaped mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
 
             speaker_data = librosa.resample(speaker_data, orig_sr=default_speakers["defaultSampleRate"], target_sr=SAMPLE_RATE)
             mic_data = librosa.resample(mic_data, orig_sr=default_mic["defaultSampleRate"], target_sr=SAMPLE_RATE)
             # print("Resample speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
-            # print("Resample mic stats:", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
+            # print("Resample mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
             speaker_data = np.mean(speaker_data.reshape(-1, default_speakers["maxInputChannels"]), axis=1).astype(np.int16)
             mic_data = np.mean(mic_data.reshape(-1, default_mic["maxInputChannels"]), axis=1).astype(np.int16)
-            # print("Mono speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
-            # print("Mono mic stats:", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
-
-            # await asyncio.sleep(10)
+            # print("Mono     speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
+            # print("Mono     mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
             max_length = max(len(speaker_data), len(mic_data))
 
             # Pad the arrays to the same size
             speaker_data = np.pad(speaker_data, (0, max_length - len(speaker_data)), mode='constant').astype(np.int16)
             mic_data = np.pad(mic_data, (0, max_length - len(mic_data)), mode='constant').astype(np.int16)
+            # print("Pad      speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
+            # print("Pad      mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
             combined_data = speaker_data + mic_data
             # print("Combined stats:", combined_data.shape, np.min(combined_data), np.max(combined_data), np.mean(combined_data))
+
+            # await asyncio.sleep(10)
 
             all_file.writeframes(combined_data)
 
