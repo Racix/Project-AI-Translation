@@ -13,8 +13,9 @@ data:
     TRANSCRIPTION_ADDRESS: "transcription.default.svc.cluster.local"
     DIARIZATION_PORT_HOST: "8082"
     DIARIZATION_ADDRESS: "diarization.default.svc.cluster.local"
+    SUMMARIZATION_PORT_HOST: "8084"
+    SUMMARIZATION_ADDRESS: "summarization.default.svc.cluster.local" 
     #TRANSLATION_PORT_HOST: "8083"
     #TRANSLATION_ADDRESS: "translation.default.svc.cluster.local"
-    #SUMMARIZATION_PORT_HOST: "8084"
-    #SUMMARIZATION_ADDRESS: "summarization.default.svc.cluster.local" 
+
 

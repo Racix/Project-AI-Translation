@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.summarization.name }}
+  labels:
+    name: {{ .Values.summarization.name }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      name: {{ .Values.summarization.name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.summarization.name }}
+    spec:
+      containers:
+        - name: {{ .Values.summarization.name }}
+          image: "{{ .Values.summarization.repository }}:{{ .Values.summarization.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.summarization.pullPolicy }}
+          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
+          ports:
+            - name: summarization
+              containerPort: {{ .Values.summarization.port }}
+              protocol: TCP
+          envFrom:
+          - configMapRef:
+                name: env
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

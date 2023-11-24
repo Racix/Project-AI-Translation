@@ -45,16 +45,24 @@ diarization:
   name: diarization
   port: 8082
 
+summarization:
+  repository: tonytonfisk/summarization
+  pullPolicy: IfNotPresent
+  tag: "latest"
+  name: summarization
+  port: 8084
+
+
 resources: 
   limits:
     cpu: 2
-    memory: 4Gi
+    memory: 3Gi
   requests:
     cpu: 1
-    memory: 4Gi
+    memory: 3Gi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80

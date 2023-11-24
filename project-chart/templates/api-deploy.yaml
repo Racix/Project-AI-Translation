@@ -31,10 +31,10 @@ spec:
           resources:
               limits:
                 cpu: 2
-                memory: 2Gi
+                memory: 1Gi
               requests:
                 cpu: 1
-                memory: 1Gi
+                memory: 525Mi
           volumeMounts:
             - mountPath: /media
               name: media
