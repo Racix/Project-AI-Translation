@@ -7,13 +7,11 @@ import argostranslate.translate
 language_codes = {"en", "sv", "fr", "es", "de", "ar", "zh", "zt", "nl", "fi", "hi", "pl", "ru"}
 
 def install_language(from_language: str, to_language: str):
-    from_code = from_language
-    to_code = to_language
     argostranslate.package.update_package_index()
     available_packages = argostranslate.package.get_available_packages()
     package_to_install = next(
         filter(
-            lambda x: x.from_code == from_code and x.to_code == to_code, available_packages
+            lambda x: x.from_code == from_language and x.to_code == to_language, available_packages
         )
     )
     argostranslate.package.install_from_path(package_to_install.download())
@@ -38,6 +36,5 @@ def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
         translation = translated_text
     else:
         install_language(from_language, to_language)
-        translated_text = translate_json(data, from_language, to_language)
-        translation =  translated_text
+        translation = translate_json(data, from_language, to_language)
     return translation
