@@ -9,6 +9,7 @@ spec:
   ports:
     - port: {{ .Values.frontend.port }}
       targetPort: {{ .Values.frontend.port }}
+      nodePort: 30000
       protocol: TCP
       name: http
   selector:

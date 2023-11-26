@@ -9,6 +9,7 @@ spec:
   ports:
     - port: {{ .Values.api.port }}
       targetPort: {{ .Values.api.port_guest }}
+      nodePort: 31000
       name: api
   selector:
     name: {{ .Values.api.name }}

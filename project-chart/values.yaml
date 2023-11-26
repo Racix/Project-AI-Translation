@@ -6,49 +6,47 @@ replicaCount: 1
 
 frontend:
   repository: tonytonfisk/frontend-frontend
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
+  pullPolicy: IfNotPresent
   name: frontend
   port: 80
 
 service:
-  type: ClusterIP  # or the desired service type (e.g., NodePort, LoadBalancer)
-    # or the desired port number for your service
+  type: NodePort  # or the desired service type (e.g., NodePort, LoadBalancer)
 
 api:
   repository: tonytonfisk/api
-  pullPolicy: Always
   tag: "latest"
-  port: 8080
+  pullPolicy: IfNotPresent
   name: api
+  port: 8080
   port_guest: 8000
 
 database:
   repository: mongo
-  pullPolicy: IfNotPresent
   tag: "latest"
-  port: 27017
+  pullPolicy: IfNotPresent
   name: db
+  port: 27017
 
 transcription:
   repository: tonytonfisk/transcription
-  pullPolicy: Always
   tag: "latest"
-  port: 8081
+  pullPolicy: IfNotPresent
   name: "transcription"
+  port: 8081
 
 diarization:
   repository: tonytonfisk/diarization
-  pullPolicy: IfNotPresent
   tag: "latest"
+  pullPolicy: IfNotPresent
   name: diarization
   port: 8082
 
 summarization:
   repository: tonytonfisk/summarization
-  pullPolicy: IfNotPresent
   tag: "latest"
+  pullPolicy: IfNotPresent
   name: summarization
   port: 8084
 
