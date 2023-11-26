@@ -1,47 +1,40 @@
-from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
-import time
-
-translate_model1 = "facebook/nllb-200-distilled-600M"
-# translate_model2 = "facebook/nllb-200–1.3B"
-# translate_model3 = "facebook/nllb-200–3.3B"
-# translate_model4 = "facebook/nllb-200-distilled-1.3B"
-
-language_mapped = {
-    "sv": "swe_Latn",
-    "en": "en_Latn",
-    "ru": "rus_Cyrl",
-    "ja": "jpn_Jpan",
-    "fa": "pes_Arab",
-    "zh": "zho_Hans",
-    "es": "spa_Latn",
-    "fr": "fra_Latn",
-}
+import json
+import argostranslate.package
+import argostranslate.translate
 
 
-def translate_to_lang(data: dict, from_language: str, to_language: str) -> list:
-    print(f"Translation started...")
-    start_time = time.time() # TODO only for time print, remove later
-    
-    model = AutoModelForSeq2SeqLM.from_pretrained(translate_model1)
-    tokenizer = AutoTokenizer.from_pretrained(translate_model1)
-    translator = pipeline(
-        "translation",
-        model=model,
-        tokenizer=tokenizer,
-        src_lang=language_mapped.get(from_language),  
-        tgt_lang=language_mapped.get(to_language),    
-        max_length=400                                 
-)
-    
-    translated_data = []
+
+language_codes = {"en", "sv", "fr", "es", "de", "ar", "zh", "zt", "nl", "fi", "hi", "pl", "ru"}
+
+def install_language(from_language: str, to_language: str):
+    argostranslate.package.update_package_index()
+    available_packages = argostranslate.package.get_available_packages()
+    package_to_install = next(
+        filter(
+            lambda x: x.from_code == from_language and x.to_code == to_language, available_packages
+        )
+    )
+    argostranslate.package.install_from_path(package_to_install.download())
+
+def translate_json(data: dict, from_language: str, to_language: str):
+    text_to_translate = []  
     for sentence in data['diarization']['segments']:
-        output = translator(sentence['text'])
-        translated_text = output[0]["translation_text"]
-        sentence['text'] = translated_text
-        translated_data.append(sentence)
+        text_to_translate.append(sentence['text'])
+    combined_text = " ".join(text_to_translate)
+    translated_text = argostranslate.translate.translate(combined_text, from_language, to_language)
+    return translated_text
 
-    # TODO only for time print, remove later
-    end_time = time.time() 
-    total_time = end_time - start_time
-    print(f"Translation finished. Total time: {str(total_time)}")
-    return translated_data
+def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
+    if from_language not in language_codes:
+        translation =  "Not a viable language"
+        return translation
+    elif from_language != "en":
+        install_language(from_language, "en")
+        whole_text_translated = translate_json(data, from_language, "en")
+        install_language("en", to_language)
+        translated_text = argostranslate.translate.translate(whole_text_translated, "en", to_language)
+        translation = translated_text
+    else:
+        install_language(from_language, to_language)
+        translation = translate_json(data, from_language, to_language)
+    return translation
