@@ -39,6 +39,11 @@
   background-color: #0056b3;
 }
 
+.num-speakers{
+  width: 90px;
+  height: 30px;
+}
+
 .file-list {
   list-style-type: none;
   padding: 0;
@@ -146,3 +151,4 @@
   display: flex;
   justify-content: flex-end;
 }
+
