@@ -59,6 +59,7 @@
   justify-content: space-between;
   width: 100%;
   box-sizing: border-box; 
+  align-items: left;
 }
 
 .edit-button-style {
@@ -69,6 +70,12 @@
   position: absolute;
   right: 0;
   top: 0;
+}
+
+.summary-button{
+  float: left;
+  margin-right: 10px;
+  overflow: hidden;
 }
 
 .save-button {
@@ -85,6 +92,19 @@
 
 .text-edit-buttons{
   float: right;
+}
+
+.language-dropdown{
+  float: left;
+  margin-right: 10px;
+  overflow: hidden;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .blue-button {
