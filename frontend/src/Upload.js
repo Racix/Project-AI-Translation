@@ -4,6 +4,7 @@ import "./styles/Upload.css";
 
 function Upload() {
   const [file, setFile] = useState(null);
+  const [speakers, setSpeakers] = useState(null)
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState("No file chosen");
   const [data, setData] = useState(null);
@@ -124,6 +125,20 @@ function Upload() {
     );
   };
 
+  const onSpeakersChange = (event) => { 
+    const enteredValue = event.target.value;
+
+  if (enteredValue === '' || /^\d+$/.test(enteredValue)) {
+    // Check if the entered value is either empty or consists of only digits
+    setSpeakers(enteredValue === '' ? null : parseInt(enteredValue, 10));
+    console.log("Speakers: ", speakers)
+  } else {
+    // Handle cases where the entered value is not a valid integer
+    // For example, you can show an error message or perform other actions
+    console.log('Invalid input. Please enter an integer.');
+  }
+  }
+
   const handleClick = (fileId) => {
     if (isDisabled) {
       return;
@@ -139,11 +154,19 @@ function Upload() {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`http://${BASE_URL}/media`, {
-        method: "POST",
-        body: formData,
-      });
-
+      var response;
+      if(speakers){
+        response = await fetch(`http://${BASE_URL}/media/?speakers=${speakers}`, {
+          method: "POST",
+          body: formData,
+        });  
+      }else{
+        response = await fetch(`http://${BASE_URL}/media`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+      
       if (response.ok) {
         alert("File uploaded successfully!");
         window.location.reload(); // Reload the entire page
@@ -170,9 +193,16 @@ function Upload() {
         <span style={{ marginLeft: "10px" }}>{fileName}</span>
       </div>
       {file && (
+        <div>
+        <input
+          onChange={onSpeakersChange}
+          className="num-speakers"
+          placeholder="Enter number of speakers"
+        />
         <button onClick={onUpload} className="upload-button">
           Upload
         </button>
+        </div>
       )}
 
       <ul className="file-list">
