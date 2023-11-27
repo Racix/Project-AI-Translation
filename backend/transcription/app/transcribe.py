@@ -2,20 +2,11 @@ from transformers import pipeline
 from langdetect import detect
 import time 
 import traceback
+from loadModel import whisper_pipeline
 
-
-MODEL_NAME = "openai/whisper-small"
-model_size = "tiny"
-device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def transcribe(file_path: str) -> dict:
-    try:        
-        whisper_pipeline = pipeline(
-            "automatic-speech-recognition",
-            model=MODEL_NAME,
-            chunk_length_s=30,
-            device=device,        
-        )                
+    try:                        
         #Transcribe the video to the original language
         transcription = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, batch_size=32, generate_kwargs={"task": "transcribe"})        
         chunks = transcription['chunks']
