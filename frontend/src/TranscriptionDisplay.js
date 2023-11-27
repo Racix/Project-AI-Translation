@@ -10,7 +10,6 @@ function TranscriptionDisplay() {
   const [transcriptionData, setTranscriptionData] = useState([]);
   const [originalTransData, setOriginalTransData] = useState([]);
   const [summaryData, setSummaryData] = useState("");
-  const [speakerMap, setSpeakerMap] = useState({});
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [isDisabled, setIsDisabled] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -21,33 +20,82 @@ function TranscriptionDisplay() {
   const [summaryVisible, setSummaryVisible] = useState(false);
   const [data, setData] = useState(null);
   const [buttonClicked, setButtonClicked] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [originalLanguage, setOriginalLanguage] = useState("");
+  const [isTranslation, setIsTranslation] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
+  /* TODO: get available languages from API call? */
+  const languageMap = {
+    sv: "Svenska",
+    en: "English",
+    ru: "Русский",
+    ja: "日本語",
+    zh: "中文",
+    es: "español",
+    fr: "Français"
+  };
+  const languageOptions = Object.entries(languageMap).map(([value, label]) => ({
+    value,
+    label
+  }));
 
   useEffect(() => {
     fetchFileContent();
-  }, [BASE_URL, data]);
+  }, [BASE_URL, data, selectedLanguage]);
 
   const fetchFileContent = async () => {
     if (testing) {
-      setTranscriptionData(testfile.message.diarization.segments)
-      setOriginalTransData(testfile.message.diarization.segments)
-      setSummaryData(testfile.message.summary)
+      setTranscriptionData(testfile.message.diarization.segments);
+      setOriginalTransData(testfile.message.diarization.segments);
+      setSummaryData(testfile.message.summary);
+      setTextChanged(false);
       return
     }
     try {
-      const response = await fetch(
-        `http://${BASE_URL}/media/${id}/analysis`
-      );
+      let endpoint;
+      let segmentFrom;
+      if (selectedLanguage !== originalLanguage) { 
+        endpoint = `http://${BASE_URL}/media/${id}/analysis/translate/${selectedLanguage}`
+        segmentFrom = "translation";
+      } else {
+        endpoint = `http://${BASE_URL}/media/${id}/analysis`
+        segmentFrom = "diarization";
+      }
+
+      let response = await fetch(endpoint);
+      if (!response.ok && selectedLanguage!==originalLanguage) {
+        const userResponse = window.confirm("No translation found of , do you want to start a translation? (this might take some time)");
+
+        if (userResponse) {
+          // User clicked "OK"
+          console.log("User clicked OK");
+        } else {
+          // User clicked "Cancel"
+          console.log("User clicked Cancel");
+          return;
+        }
+        response = await fetch(endpoint,
+          {
+            method: "POST",
+          }
+        )
+      }
       if (response.ok) {
         const data = await response.json(); // First parse the entire JSON response
-        console.log("TYOO: ", )
-        const segments = data.diarization.segments; // Then access the required properties
-        const summary = data.summary;
+        console.log("TYOO: ", data)
+        console.log("sl: ", originalLanguage)
+        const segments = segmentFrom==="diarization" ? data.diarization.segments : data.translation.segments; // Then access the required properties
         setTranscriptionData(segments);
-        setOriginalTransData(segments);
-        setSummaryData(summary);
-      }
+        setTextChanged(false);
+        setIsTranslation(segmentFrom==="translation");
+        if (segmentFrom==="diarization") {
+          const summary = data.summary;
+          setSummaryData(summary);
+          setOriginalTransData(segments);
+          setOriginalLanguage(data.diarization["Detected language"]);
+        }
+      } 
     } catch (error) {
       console.error("Error fetching file content.", error);
     }
@@ -140,7 +188,7 @@ function TranscriptionDisplay() {
       ws.close();
     };
   };
-  const handleClick = (fileId) => {
+  const handleSummaryClick = (fileId) => {
     if (isDisabled) {
       return;
     }
@@ -230,6 +278,11 @@ function TranscriptionDisplay() {
     return `${minutes}.${remainingSeconds}`;
   };
 
+  const handleLanguageSelection = (event) => {
+    const language = event.target.value;
+    setSelectedLanguage(language);
+  };
+
   let previousSpeaker = null;
 
   return (
@@ -240,34 +293,49 @@ function TranscriptionDisplay() {
       }
       <div>
         <div className="transcription-buttons-container">
-          {
-            summaryData
-            ? (
-                // If summaryData is true
-                <button
-                  onClick={() => setSummaryVisible(!summaryVisible)}
-                  className="summary-button blue-button"
-                >
-                  Summary
-                </button>
-              )
-            : ( // If false, check if there is transcription
-                transcriptionData.length > 0 && (
-                  <div>
-                    {!buttonClicked ? (
+          <div>
+            {
+              summaryData
+              ? (
+                  // If summaryData is true
+                  <button
+                    onClick={() => setSummaryVisible(!summaryVisible)}
+                    className="summary-button blue-button"
+                  >
+                    Summary
+                  </button>
+                )
+              : ( // If false, check if there is transcription
+                  transcriptionData.length > 0 && (
+                    !buttonClicked ? (
                       <button
                         className="summary-button blue-button"
-                        onClick={() => handleClick()}>
+                        onClick={() => handleSummaryClick()}>
                         Summarize
                       </button>
                     ) : (
                       data && <div className="message-field">{data.message}</div>
-                    )}
-                  </div>
-                )
-            )
-          }
-          <div></div> {/*needed to have Summary always on left and save/cancel always right*/}
+                    )
+                  )
+              )
+            }
+            {transcriptionData.length > 0 &&
+              <select 
+                name="language"
+                className="language-dropdown" 
+                value={selectedLanguage} 
+                onChange={handleLanguageSelection}>
+                <option value="" disabled hidden>Translation</option>
+                <option value={originalLanguage}>{"Original (" + (languageMap[originalLanguage] || originalLanguage) + ")"}</option>
+                {languageOptions.map((option, index) => (
+                  option.value !== originalLanguage &&
+                  <option key={index} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            }
+          </div>
           <div className="text-edit-buttons">
           {textChanged &&
             <button
@@ -295,11 +363,19 @@ function TranscriptionDisplay() {
         }
         {transcriptionData &&
           transcriptionData.map((item, index) => {
-            const currentSpeaker = speakerMap[item.speaker] || item.speaker;
+            
+            const currentSpeaker = item.speaker;
             const showSpeaker = currentSpeaker !== previousSpeaker;
             previousSpeaker = currentSpeaker;
             return (
-              <div key={index} className="transcription-item">
+              isTranslation ? (
+                <div key={index} className="transcription-item">
+                  <p className="transcription-text">
+                  <span>{item.text}</span>
+                  </p>
+                </div>
+              ) : (
+                <div key={index} className="transcription-item">
                 {showSpeaker && (
                   <div style={{ display: "flex", alignItems: "center" }}>
                     <h3>{currentSpeaker}:</h3>
@@ -384,6 +460,7 @@ function TranscriptionDisplay() {
                   )}
                 </p>
               </div>
+              )
             );
           })}
       </div>
