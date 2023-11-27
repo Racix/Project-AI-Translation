@@ -320,33 +320,28 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     max_queue_len  = 25
     min_queue_len  = 15
     queue = []
+    total_time = 0
     
-
     await liveTransciptionManager.connect(websocket, live_id)
     
     try:
         while True:
             data = await websocket.receive_bytes()
             data = np.frombuffer(data, dtype=np.int16)
+            total_time += data.size/SAMPLE_RATE
 
             queue.append(data)
 
             queue_len = queue_length(queue)
-            print("queue_len before pop", queue_len)
-
-            queue_len = queue_length(queue)
-
-            while queue_len > max_queue_len and queue_len-(len(queue[0])/SAMPLE_RATE) > min_queue_len:
+            # print("queue_len before pop", queue_len)
+            while queue_len > max_queue_len and queue_len-(queue[0].size/SAMPLE_RATE) > min_queue_len:
                 queue.pop(0)
                 queue_len = queue_length(queue)
 
-
-            queue_len = queue_length(queue)
-            print("queue_len after pop", queue_len)
+            # queue_len = queue_length(queue)
+            # print("queue_len after pop", queue_len)
 
             data = bytes_to_wave(queue)
-
-            
             form_data = aiohttp.FormData()
             form_data.add_field('file', data, filename=f'live_id_{live_id}_{hash(data)}.wav', content_type='audio/wav')
 
@@ -365,12 +360,16 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
                 print("Unkonwn error while live transcribing:", e)
 
             if transcription is not None:
-                segments = transcription['transcription']['segments']
-                text = ''.join(item['text'] for item in segments)
+                delta_time = total_time - queue_len
+                for segment in transcription['transcription']['segments']:
+                    segment["start"] = segment["start"] + delta_time
+                # segments = transcription['transcription']['segments']
+                # text = ''.join(item['text'] for item in segments)
 
-            print("text:", transcription)
-            if text is not None:
-                await liveTransciptionManager.broadcast(text, live_id)
+            print("transcription:", transcription)
+            await liveTransciptionManager.broadcast(transcription, live_id)
+            # if text is not None:
+            #     await liveTransciptionManager.broadcast(text, live_id)
 
     except (WebSocketDisconnect, ConnectionClosedOK):
         pass
@@ -383,29 +382,20 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     
 def bytes_to_wave(queue):
     # Ensure the array is of type int16
-
-    
-    # print("InitDATA: ", queue)
     n_channels = 1
-    
-    
-    # print("laterDAta: ", queue)
-    # print("n_channels", n_channels, "sample_rate", SAMPLE_RATE)
     
     # Create a wave file in memory
     with io.BytesIO() as wave_buffer:
         with wave.open(wave_buffer, 'w') as wave_file:
+            data = np.concatenate(queue)
             wave_file.setnchannels(n_channels)  # 1 channel (mono)
             wave_file.setsampwidth(2)   # 2 bytes per sample (16-bit PCM)
             wave_file.setframerate(SAMPLE_RATE)
-
-            data = np.concatenate(queue)
             wave_file.writeframes(data.tobytes())
             
-        
         # Get the wave file data from the buffer
         wave_data = wave_buffer.getvalue()
-        with open('output.wav', 'wb') as output_file:
+        with open('output.wav', 'wb') as output_file: # TODO for debug remove
                 output_file.write(wave_data)
 
         return wave_data
