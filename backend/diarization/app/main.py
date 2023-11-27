@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, status, UploadFile, Form
 app = FastAPI()
 
 @app.post("/diarize", status_code=status.HTTP_201_CREATED)
-async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form(...)):
+async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form(...), speakers: str = Form(...)):
     transcription = json.loads(json_data)["transcription"]
     if transcription is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcription data not in request body") # TODO should this be a error?
@@ -16,6 +16,9 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     if not file.filename.lower().endswith(".wav"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Media file must be of type .wav")
     
+    speakers = json.loads(speakers)
+    speakers = int(speakers) if speakers is not '' else None
+
     # Initiate temporary dictionaries for Nemo output
     timestamp = ut.initialize_dirs()
     file_path = os.path.join(ut.TMP_DIR, file.filename)
@@ -25,7 +28,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
         media_file.write(file.file.read())
 
     try:
-        di.create_diarization(file_path, None, 1) # TODO fix later
+        di.create_diarization(file_path, None, speakers) # TODO fix later
         diarization_segments = co.parse_rttm_from_file(file_path)
         transcription['segments'] = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
     except Exception:

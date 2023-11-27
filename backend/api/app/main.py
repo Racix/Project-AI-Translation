@@ -51,8 +51,8 @@ async def get_all_media():
     return res
 
 
-@app.post("/media", status_code=status.HTTP_201_CREATED)
-async def upload_media(file: UploadFile, background_tasks: BackgroundTasks):
+@app.post("/media/", status_code=status.HTTP_201_CREATED)
+async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None):
     if not is_media_file(file):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
@@ -72,7 +72,14 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks):
     background_tasks.add_task(write_mono_wav_file, file_path, wav_path)
 
     # Parse data and insert into database
-    data = {"name": file.filename, "file_path": file_path, "wav_path": wav_path, "date": date}
+    data = {
+        "name": file.filename, 
+        "file_path": file_path, 
+        "wav_path": wav_path, 
+        "date": date, 
+        "speakers": speakers
+    }
+
     media_col.insert_one(data)
     
     data['_id'] = str(data['_id'])
@@ -112,11 +119,11 @@ async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Analysis already exists. To re-analze, delete the existing analysis.")
 
     # Start analysis in the background
-    background_tasks.add_task(analyze, media_info['file_path'], media_info['wav_path'], media_id)
+    background_tasks.add_task(analyze, media_info['file_path'], media_info['wav_path'], media_id, media_info['speakers'])
     return {"message": "Media file analysis started"}
 
 
-async def analyze(file_path: str, wav_path: str, media_id: str):
+async def analyze(file_path: str, wav_path: str, media_id: str, speakers: int = None):
     timeout_seconds = 600 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
@@ -164,6 +171,7 @@ async def analyze(file_path: str, wav_path: str, media_id: str):
                 form = aiohttp.FormData()
                 form.add_field('json_data', json.dumps(transcription), content_type='application/json')
                 form.add_field('file', file)
+                form.add_field('speakers', str(speakers) if speakers is not None else '')
                 async with session.post(diarize_url, data=form) as response:
                     if response.status == status.HTTP_201_CREATED:
                         diarization = await response.json()

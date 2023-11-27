@@ -50,7 +50,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) 
     config.diarizer.speaker_embeddings.parameters.multiscale_weights= [1,1,1,1,1]
     config.diarizer.oracle_vad = False # ----> ORACLE VAD Sätt till false om vi inte vill ha RTTM!!!
     config.diarizer.vad.model_path = pretrained_vad
-    config.diarizer.clustering.parameters.oracle_num_speakers = False
+    config.diarizer.clustering.parameters.oracle_num_speakers = False if speakers is None else True #False if speakers is nonec
     return config
 
 
