@@ -29,7 +29,6 @@ def transcribe(file_path: str) -> dict:
             "detected_language": detected_language,
             "segments": transcription_data,            
         }
-        print(result_dict)
         return result_dict
     except Exception as e:
         print(traceback.format_exc())
