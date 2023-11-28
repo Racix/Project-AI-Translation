@@ -4,7 +4,7 @@ import "./styles/Upload.css";
 
 function Upload() {
   const [file, setFile] = useState(null);
-  const [speakers, setSpeakers] = useState(null)
+  const [speakers, setSpeakers] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState("No file chosen");
   const [data, setData] = useState(null);
@@ -40,12 +40,14 @@ function Upload() {
         }
       );
       if (!response.ok) {
-        alert("could not start analysis (if it exists, it needs to be deleted before a new analysis can be done)");
-        ws.close() 
+        alert(
+          "could not start analysis (if it exists, it needs to be deleted before a new analysis can be done)"
+        );
+        ws.close();
       }
     } catch (error) {
       console.error("Error fetching file content.", error);
-      ws.close()
+      ws.close();
     }
   };
 
@@ -125,19 +127,16 @@ function Upload() {
     );
   };
 
-  const onSpeakersChange = (event) => { 
+  const onSpeakersChange = (event) => {
     const enteredValue = event.target.value;
-
-  if (enteredValue === '' || /^\d+$/.test(enteredValue)) {
-    // Check if the entered value is either empty or consists of only digits
-    setSpeakers(enteredValue === '' ? null : parseInt(enteredValue, 10));
-    console.log("Speakers: ", speakers)
-  } else {
-    // Handle cases where the entered value is not a valid integer
-    // For example, you can show an error message or perform other actions
-    console.log('Invalid input. Please enter an integer.');
-  }
-  }
+    if (/^\d+$/.test(enteredValue)) {
+      setSpeakers(parseInt(enteredValue));
+    } else {
+      event.target.value = "";
+      alert("Invalid input. Please enter an integer!");
+      console.log("Invalid input. Please enter an integer.");
+    }
+  };
 
   const handleClick = (fileId) => {
     if (isDisabled) {
@@ -149,24 +148,26 @@ function Upload() {
 
   const onUpload = async () => {
     if (!file) return;
-
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       var response;
-      if(speakers){
-        response = await fetch(`http://${BASE_URL}/media/?speakers=${speakers}`, {
-          method: "POST",
-          body: formData,
-        });  
-      }else{
+      if (speakers) {
+        response = await fetch(
+          `http://${BASE_URL}/media/?speakers=${speakers}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+      } else {
         response = await fetch(`http://${BASE_URL}/media`, {
           method: "POST",
           body: formData,
         });
       }
-      
+
       if (response.ok) {
         alert("File uploaded successfully!");
         window.location.reload(); // Reload the entire page
@@ -193,15 +194,16 @@ function Upload() {
         <span style={{ marginLeft: "10px" }}>{fileName}</span>
       </div>
       {file && (
-        <div>
-        <input
-          onChange={onSpeakersChange}
-          className="num-speakers"
-          placeholder="Enter number of speakers"
-        />
-        <button onClick={onUpload} className="upload-button">
-          Upload
-        </button>
+        <div className="btn-container">
+          Number of speakers:
+          <input
+            onChange={onSpeakersChange}
+            className="num-speakers"
+            placeholder="Nr of Speakers"
+          />
+          <button onClick={onUpload} className="upload-button">
+            Upload
+          </button>
         </div>
       )}
 

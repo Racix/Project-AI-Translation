@@ -33,10 +33,21 @@
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
+.upload-button{
+  float: right;
+}
 .upload-button:hover,
 .analyze-button:hover {
   background-color: #0056b3;
+}
+.btn-container{
+position: relative;
+width: 30%;
+}
+
+.speaker-container{
+float: left;
+background-color: #0056b3;
 }
 
 .num-speakers{
