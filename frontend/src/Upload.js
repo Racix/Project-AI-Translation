@@ -128,9 +128,9 @@ function Upload() {
   };
 
   const onSpeakersChange = (event) => {
-    const enteredValue = event.target.value;
-    if (/^\d+$/.test(enteredValue)) {
-      setSpeakers(parseInt(enteredValue));
+    const e = event.target.value;
+    if (e === "" || /^\d+$/.test(e)) {
+      e !== "" && setSpeakers(parseInt(e));
     } else {
       event.target.value = "";
       alert("Invalid input. Please enter an integer!");
@@ -150,10 +150,11 @@ function Upload() {
     if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
-
+    console.log("Works fine here: ", speakers)
     try {
       var response;
       if (speakers) {
+        console.log("Works fine here2: ", speakers)
         response = await fetch(
           `http://${BASE_URL}/media/?speakers=${speakers}`,
           {
@@ -162,7 +163,8 @@ function Upload() {
           }
         );
       } else {
-        response = await fetch(`http://${BASE_URL}/media`, {
+        console.log("Works fine here3: ", speakers)
+        response = await fetch(`http://${BASE_URL}/media/`, {
           method: "POST",
           body: formData,
         });
