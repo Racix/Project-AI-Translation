@@ -14,6 +14,11 @@ frontend:
 service:
   type: ClusterIP  # or the desired service type (e.g., NodePort, LoadBalancer)
 
+cuda:
+  repository: nvidia/cuda
+  tag: nvidia/cuda:11.0.3-runtime-ubuntu20.04
+
+
 api:
   repository: tonytonfisk/api
   tag: "latest"
