@@ -17,9 +17,11 @@ spec:
         name: {{ .Values.diarization.name }}
     spec:
       containers:
+        - name: cuda
+          image: "{{ .Values.cuda.repository }}:{{ .Values.cuda.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.diarization.pullPolicy }}
         - name: {{ .Values.diarization.name }}
           image: "{{ .Values.diarization.repository }}:{{ .Values.diarization.tag | default .Chart.AppVersion }}"
-          image: "{{ .Values.cuda.repository }}:{{ .Values.cuda.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.diarization.pullPolicy }}
           command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
           ports:
