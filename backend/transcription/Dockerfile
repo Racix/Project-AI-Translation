@@ -2,8 +2,6 @@ FROM python:3.10
 
 WORKDIR /transcription
 
-RUN pip install --no-cache-dir --upgrade faster-whisper==0.9.0
-
 COPY ./requirements.txt /transcription/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /transcription/requirements.txt
