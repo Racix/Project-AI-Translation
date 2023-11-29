@@ -53,7 +53,7 @@ summarization:
 
 resources: 
   limits:
-    gpu: 1
+    nvidia.com/gpu: 1
 
 autoscaling:
   enabled: false
