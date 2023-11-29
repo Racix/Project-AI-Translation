@@ -53,11 +53,7 @@ summarization:
 
 resources: 
   limits:
-    cpu: 2
-    memory: 3Gi
-  requests:
-    cpu: 1
-    memory: 3Gi
+    gpu: 1
 
 autoscaling:
   enabled: false
