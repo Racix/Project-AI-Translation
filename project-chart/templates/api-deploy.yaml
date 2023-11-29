@@ -28,13 +28,6 @@ spec:
           envFrom:
           - configMapRef:
                 name: env
-          resources:
-              limits:
-                cpu: 2
-                memory: 1Gi
-              requests:
-                cpu: 1
-                memory: 525Mi
           volumeMounts:
             - mountPath: /media
               name: media
