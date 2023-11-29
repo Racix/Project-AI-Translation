@@ -12,7 +12,7 @@ frontend:
   port: 80
 
 service:
-  type: NodePort  # or the desired service type (e.g., NodePort, LoadBalancer)
+  type: ClusterIP  # or the desired service type (e.g., NodePort, LoadBalancer)
 
 api:
   repository: tonytonfisk/api

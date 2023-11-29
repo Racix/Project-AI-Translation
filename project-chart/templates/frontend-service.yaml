@@ -5,7 +5,7 @@ metadata:
   labels:
     name: {{ .Values.frontend.name}}
 spec:
-  type: {{ .Values.service.type }}
+  type: LoadBalancer
   ports:
     - port: {{ .Values.frontend.port }}
       targetPort: {{ .Values.frontend.port }}
