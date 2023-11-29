@@ -134,7 +134,6 @@ function Upload() {
     } else {
       event.target.value = "";
       alert("Invalid input. Please enter an integer!");
-      console.log("Invalid input. Please enter an integer.");
     }
   };
 
@@ -150,11 +149,9 @@ function Upload() {
     if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
-    console.log("Works fine here: ", speakers)
     try {
       var response;
       if (speakers) {
-        console.log("Works fine here2: ", speakers)
         response = await fetch(
           `http://${BASE_URL}/media/?speakers=${speakers}`,
           {
@@ -163,7 +160,6 @@ function Upload() {
           }
         );
       } else {
-        console.log("Works fine here3: ", speakers)
         response = await fetch(`http://${BASE_URL}/media/`, {
           method: "POST",
           body: formData,

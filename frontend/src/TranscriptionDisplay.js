@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./styles/TranscriptionDisplay.css";
 import penIcon from "./img/penIcon.svg";
 import { useParams } from "react-router-dom";
-//import testfile from "./testfil.json"; //change to your testfile
+import testfile from "./testfile.json"; //change to your testfile
 
 function TranscriptionDisplay() {
   const [testing] = useState(false); //set to true to use element 'testfile' as outprint (limited functionality)
@@ -30,9 +30,9 @@ function TranscriptionDisplay() {
 
   const fetchFileContent = async () => {
     if (testing) {
-      //setTranscriptionData(testfile.message.diarization.segments)
-      //setOriginalTransData(testfile.message.diarization.segments)
-      //setSummaryData(testfile.message.summary)
+      setTranscriptionData(testfile.message.diarization.segments)
+      setOriginalTransData(testfile.message.diarization.segments)
+      setSummaryData(testfile.message.summary)
       return
     }
     try {
