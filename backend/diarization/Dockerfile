@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
+FROM nvidia/cuda:11.6.1-cudnn8-runtime-ubuntu20.04
 
 WORKDIR /diarization
 
@@ -6,6 +6,11 @@ RUN apt-get update && \
     apt-get install -y ffmpeg && \
     apt-get install -y wget && \
     apt-get install -y unzip && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get install -y python3.10 python3.10-dev python3.10-distutils && \
+    apt-get install -y git && \
+    apt-get install -y curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -17,9 +22,12 @@ RUN wget --content-disposition https://api.ngc.nvidia.com/v2/models/nvidia/nemo/
     unzip diar_msdd_telephonic_1.0.1.zip -d /diarization/models && \
     rm vad_multilingual_marblenet_1.10.0.zip titanet_large_v1.zip diar_msdd_telephonic_1.0.1.zip
 
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.10 get-pip.py && \
+    rm get-pip.py
+
 RUN apt-get update && \
-    apt-get install -y python3-pip python3-dev && \
-    apt-get install -y git && \
+    apt-get install -y build-essential gcc && \
     rm -rf /var/lib/apt/lists/*
 
 COPY ./requirements.txt /diarization/requirements.txt
