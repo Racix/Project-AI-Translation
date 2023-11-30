@@ -1,6 +1,11 @@
-FROM python:3.10 as python_stage
+FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
 
 WORKDIR /summarize
+
+RUN apt-get update && \
+    apt-get install -y python3-pip python3-dev && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /summarize/models
 
@@ -12,10 +17,3 @@ RUN pip install --no-cache-dir --upgrade -r /summarize/requirements.txt
 
 COPY ./app /summarize/app
 
-FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
-
-COPY --from=python_stage /summarize /summarize
-
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-
-WORKDIR /summarize/app
