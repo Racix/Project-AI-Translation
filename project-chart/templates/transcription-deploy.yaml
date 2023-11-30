@@ -17,9 +17,6 @@ spec:
         name: {{ .Values.transcription.name }}
     spec:
       containers:
-        - name: cuda
-          image: "{{ .Values.cuda.repository }}:{{ .Values.cuda.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.diarization.pullPolicy }}
         - name: {{ .Values.transcription.name }}
           image: "{{ .Values.transcription.repository }}:{{ .Values.transcription.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.transcription.pullPolicy }}

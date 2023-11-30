@@ -17,9 +17,6 @@ spec:
         name: {{ .Values.summarization.name }}
     spec:
       containers:
-        - name: cuda
-          image: "{{ .Values.cuda.repository }}:{{ .Values.cuda.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.diarization.pullPolicy }}
         - name: {{ .Values.summarization.name }}
           image: "{{ .Values.summarization.repository }}:{{ .Values.summarization.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.summarization.pullPolicy }}

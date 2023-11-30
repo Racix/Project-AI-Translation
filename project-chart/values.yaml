@@ -14,11 +14,6 @@ frontend:
 service:
   type: ClusterIP  # or the desired service type (e.g., NodePort, LoadBalancer)
 
-cuda:
-  repository: nvidia/cuda
-  tag: 11.0.3-runtime-ubuntu20.04
-
-
 api:
   repository: tonytonfisk/api
   tag: "latest"
@@ -37,21 +32,21 @@ database:
 transcription:
   repository: tonytonfisk/transcription
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   name: "transcription"
   port: 8081
 
 diarization:
   repository: tonytonfisk/diarization
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   name: diarization
   port: 8082
 
 summarization:
   repository: tonytonfisk/summarization
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   name: summarization
   port: 8084
 

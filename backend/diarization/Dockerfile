@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10 as python_stage 
 
 WORKDIR /diarization
 
@@ -21,3 +21,11 @@ RUN pip install --no-cache-dir --upgrade Cython==3.0.3
 RUN pip install --no-cache-dir --upgrade -r /diarization/requirements.txt
 
 COPY ./app /diarization/app
+
+FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
+
+COPY --from=python_stage /diarization /diarization
+
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+WORKDIR /diarization/app

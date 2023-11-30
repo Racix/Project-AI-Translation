@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10 as python_stage
 
 WORKDIR /transcription
 
@@ -12,6 +12,10 @@ RUN pip install --no-cache-dir --upgrade -r /transcription/requirements.txt
 
 COPY ./app /transcription/app
 
-# EXPOSE 8080
+FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
 
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+COPY --from=python_stage /transcription /transcription
+
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+WORKDIR /transcription/app
