@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10 as python_stage
 
 WORKDIR /summarize
 
@@ -11,3 +11,11 @@ COPY ./requirements.txt /summarize/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /summarize/requirements.txt
 
 COPY ./app /summarize/app
+
+FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
+
+COPY --from=python_stage /summarize /summarize
+
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+WORKDIR /summarize/app
