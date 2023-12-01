@@ -35,7 +35,9 @@ COPY ./requirements.txt /diarization/requirements.txt
 RUN pip install --no-cache-dir --upgrade Cython==3.0.3
 RUN pip install --no-cache-dir --upgrade -r /diarization/requirements.txt
 
+RUN pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
+
 COPY ./app /diarization/app
 
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
 

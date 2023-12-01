@@ -2,7 +2,7 @@ from faster_whisper import WhisperModel
 import time
 
 model_size = "tiny"
-model = WhisperModel(model_size, compute_type="int8")
+model = WhisperModel(model_size, device ="cuda", compute_type="int8")
 
 def transcribe(file_path: str) -> dict:
     print(f"Transcription of {file_path} started...")
