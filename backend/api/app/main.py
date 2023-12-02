@@ -316,7 +316,7 @@ async def analysis_websocket(websocket: WebSocket, media_id: str):
 async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-    transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
+    transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
     max_queue_len  = 25
     min_queue_len  = 15
     queue = []
@@ -361,12 +361,12 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
 
             if transcription is not None:
                 delta_time = total_time - queue_len
-                for segment in transcription['transcription']['segments']:
+                for segment in transcription['live-transcription']['segments']:
                     segment["start"] = segment["start"] + delta_time
                 # segments = transcription['transcription']['segments']
                 # text = ''.join(item['text'] for item in segments)
 
-            print("transcription:", transcription)
+            print("live-transcription:", transcription)
             await liveTransciptionManager.broadcast(transcription, live_id)
             # if text is not None:
             #     await liveTransciptionManager.broadcast(text, live_id)
