@@ -1,18 +1,11 @@
-FROM nvidia/cuda:11.6.1-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:12.0.0-cudnn8-devel-ubuntu22.04
 
 WORKDIR /summarize
 
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y python3.10 python3.10-dev python3.10-distutils && \
+    apt-get install -y python3 python3-pip && \
     apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
-
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3.10 get-pip.py && \
-    rm get-pip.py
 
 RUN mkdir -p /summarize/models
 
@@ -20,7 +13,13 @@ RUN curl -L -o /summarize/models/mistral7b "https://huggingface.co/TheBloke/Open
 
 RUN apt-get update && \
     apt-get install -y build-essential gcc g++ && \
+    apt-get install -y git && \
     rm -rf /var/lib/apt/lists/*
+
+ENV CUDA_DOCKER_ARCH=all
+ENV LLAMA_CUBLAS=1
+
+RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install llama-cpp-python
 
 COPY ./requirements.txt /summarize/requirements.txt
 
