@@ -31,7 +31,7 @@ database:
 
 transcription:
   repository: tonytonfisk/transcription
-  tag: "largev2"
+  tag: "tiny"
   pullPolicy: Always
   name: "transcription"
   port: 8081
