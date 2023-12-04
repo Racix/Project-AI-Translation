@@ -54,6 +54,14 @@
   display: block;
 }
 
+.transcription-buttons-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box; 
+  align-items: left;
+}
+
 .edit-button-style {
   background: none;
   border: none;
@@ -63,8 +71,43 @@
   right: 0;
   top: 0;
 }
-.save-button,
-.change-label-button {
+
+.summary-button{
+  float: left;
+  margin-right: 10px;
+  overflow: hidden;
+}
+
+.save-button {
+  margin-right: 10px;
+  float: right;
+  overflow: hidden;
+}
+
+.cancel-button {
+  margin-right: 10px;
+  float: right;
+  overflow: hidden;
+}
+
+.text-edit-buttons{
+  float: right;
+}
+
+.language-dropdown{
+  float: left;
+  margin-right: 10px;
+  overflow: hidden;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.blue-button {
   padding: 10px 20px;
   background-color: #007bff;
   color: white;
@@ -77,8 +120,7 @@
   margin-left: 2px;
 }
 
-.save-button:hover,
-.change-label-button:hover {
+.blue-button:hover {
   background-color: #0056b3;
 }
 .text-input,
@@ -119,4 +161,12 @@
 .speaker-tag {
   font-weight: bold;
   margin-right: 10px;
+}
+
+.summary-box {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 5px;
 }
