@@ -24,4 +24,4 @@ async def transcribe_media_file(file: UploadFile):
         # Remove temp file
         os.remove(file_path)
 
-    return {"live-transcription": res}
+    return {"transcription": res}
