@@ -1,4 +1,8 @@
 # Weekly blog
+## Friday - 2023-12-01
+Weekly update, we are now able to deploy everything to Google Kubernetes Engine using their compute power, have not yet deployed live transcription and translation service to the cluster, the other serivces are deployed and mostly working with some minor bugs. As for the other services we are making progress in alot of areas and we got some pull requests that are in review and that should be merged soon.
+
+
 ## Friday - 2023-11-24
 Weekly update, we have made some progress for several parts of our project.
 
