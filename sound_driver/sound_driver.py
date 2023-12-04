@@ -3,36 +3,37 @@ from pyaudiowpatch import PyAudio, paWASAPI, paInt16
 from librosa import resample
 import wave # will get removed after we are done debugging
 import numpy as np
-from vocie_activity import voice_activity, is_talking
-# from cli import get_arguments
 from send_audio import WebSocket
 from yaml import safe_load
 from datetime import datetime
+from webrtcvad import Vad
+from pyperclip import copy as pyperclipCopy
+import time
 
 def main():
     config = safe_load(open("config.yaml"))
     room_id = input("Choose a room id: ")
+    pyperclipCopy(room_id) # Copy the room id to the clipboard
+    print(f"Choosen room id \"{room_id}\" has been copied to the clipboard")
     asyncio.run(sound_driver(room_id, config["ip-address"], config["speaker-id"], config["mic-id"]))
 
 async def sound_driver(room_id, ip_address, speaker_id, mic_id):
+    import logging
+    logger = logging.getLogger('websockets')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+
+    # "MAGIC" PARAMETER NUMBERS
+    QUIET_CHUNKS_SAVE_MAX = 20
+    QUIET_CHUNKS_CUTOFF_WINDOW = 5
+    VOICE_SENSITIVITY = 3 # VAD (Voice Activity Detection) sensitivity level (1 to 3, higher is more sensitive)
+    MAX_SEND_SIZE = 50000
 
     audio = PyAudio()
-
     default_speakers, default_mic = get_default_speaker_and_mic(audio, speaker_id, mic_id)
+    vad = Vad(VOICE_SENSITIVITY)
     
-    # print("default_speakers:", default_speakers)
-    # print("default_mic:", default_mic)
-
-    # print("default_speakers:", default_speakers["index"], default_speakers["defaultSampleRate"], default_speakers["maxInputChannels"], default_speakers["name"])
-    # print("default_mic:     ", default_mic["index"], default_mic["defaultSampleRate"], default_mic["maxInputChannels"], default_mic["name"])
-
-    # number of channels to be higher or equalt to the max amount of channels or else weird stuff happend to the audio quality
-    # sample_rate = default_speakers["defaultSampleRate"] if default_speakers["defaultSampleRate"] >= default_mic["defaultSampleRate"] else default_mic["defaultSampleRate"]
-    # sample_rate = int(min(default_speakers["defaultSampleRate"], default_mic["defaultSampleRate"]))
-    # n_channels = default_speakers["maxInputChannels"] if default_speakers["maxInputChannels"] >= default_mic["maxInputChannels"] else default_mic["maxInputChannels"]
-    # print("samle_rate", SAMPLE_RATE, "n_channels", n_channels)
-    
-    # Set the audio parameters
+    # AUDIO PARAMETERS
     FORMAT = paInt16
     SAMPLE_SIZE = audio.get_sample_size(FORMAT)
     SAMPLE_RATE = 16000
@@ -76,19 +77,26 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
     websocket_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(websocket_loop)
 
+    print("Connecting websocket to room...")
     ws = WebSocket(ip_address, room_id)
     await ws.connect()
+    print("Websocket connected")
+    
+    input("Press ENTER to start the recording:")
 
-    # voice_activity_last_loop = False
+    # Loop state variables
     send_data = np.empty(0, dtype=np.int16)
-    loop_num = 0
-    # test_file_counter = 0
-    last_quiet_chunk = []
-
+    last_quiet_chunks_buffer = []
     started_talking = False
+    quite_chunk_count = 0
+    i = 0
     try:
-        print("Recording...")
         while True:
+            # Nice recording printout
+            i = i + 1 if i < 49 else 0
+            j = (i // 10) + 1
+            print("Recording", j * ".", (5 - j) * " ", sep="", end="\r")
+
             # Read data from speaker and mic
             speaker_data = speaker_stream.read(SPEAKER_CHUNK)
             mic_data = mic_stream.read(MIC_CHUNK, exception_on_overflow=False)
@@ -99,28 +107,26 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
             # print("Original speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
             # print("Original mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
-
             speaker_data = np.reshape(speaker_data, (default_speakers["maxInputChannels"], SPEAKER_CHUNK))
             mic_data = np.reshape(mic_data, (default_mic["maxInputChannels"], MIC_CHUNK))
             # print("Reshaped speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
             # print("Reshaped mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
-
 
             speaker_data = resample(speaker_data, orig_sr=default_speakers["defaultSampleRate"], target_sr=SAMPLE_RATE)
             mic_data = resample(mic_data, orig_sr=default_mic["defaultSampleRate"], target_sr=SAMPLE_RATE)
             # print("Resample speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
             # print("Resample mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
+            # To mono
             speaker_data = np.mean(speaker_data.reshape(-1, default_speakers["maxInputChannels"]), axis=1).astype(np.int16)
             mic_data = np.mean(mic_data.reshape(-1, default_mic["maxInputChannels"]), axis=1).astype(np.int16)
             # print("Mono     speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
             # print("Mono     mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
-            max_length = max(len(speaker_data), len(mic_data))
-
-            # Pad the arrays to the same size
-            speaker_data = np.pad(speaker_data, (0, max_length - len(speaker_data)), mode='constant').astype(np.int16)
-            mic_data = np.pad(mic_data, (0, max_length - len(mic_data)), mode='constant').astype(np.int16)
+            # Fallback to ensusre to pad the arrays to the same size
+            max_length = max(speaker_data.size, mic_data.size)
+            speaker_data = np.pad(speaker_data, (0, max_length - speaker_data.size), mode='constant').astype(np.int16)
+            mic_data = np.pad(mic_data, (0, max_length - mic_data.size), mode='constant').astype(np.int16)
             # print("Pad      speaker stats:", speaker_data.shape, np.min(speaker_data), np.max(speaker_data), np.mean(speaker_data))
             # print("Pad      mic stats:    ", mic_data.shape, np.min(mic_data), np.max(mic_data), np.mean(mic_data))
 
@@ -131,39 +137,49 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
 
             record_file.writeframes(combined_data) # write to file for debug
 
-            if is_talking(combined_data, SAMPLE_RATE):
-                print("!", end="")
-                loop_num = 0
+            if vad.is_speech(combined_data, SAMPLE_RATE) and not send_data.size > MAX_SEND_SIZE:
+                # print("!", end="")
+                quite_chunk_count = 0
                 send_data = np.append(send_data, combined_data)
                 started_talking  = True
                 continue
             
             if started_talking:
-                # the small silence between talking
+                # Append the quiet sound (or missed voice sound by VAD) when started talking (to try and prevent sending a part of a word/sentence)
                 send_data = np.append(send_data, combined_data).astype(np.int16)
             else:
-                # Save the last quiet chunk before someone talked to improve the start of segments
-                last_quiet_chunk = combined_data
+                # Save the last quiet chunks before someone talked to improve the start of segments
+                if len(last_quiet_chunks_buffer) >= QUIET_CHUNKS_SAVE_MAX:
+                    last_quiet_chunks_buffer.pop(0)
+                last_quiet_chunks_buffer.append(combined_data)
 
-            loop_num+= 1
-            if loop_num >= 3 and started_talking:
-                send_data = np.insert(send_data, 0, last_quiet_chunk)
+            quite_chunk_count+= 1
+            if (quite_chunk_count >= QUIET_CHUNKS_CUTOFF_WINDOW and started_talking) or send_data.size > MAX_SEND_SIZE:
+                send_data = np.append(np.array(last_quiet_chunks_buffer).flatten().astype(np.int16), send_data).astype(np.int16)
                 send_file.writeframes(send_data) # write to debug file 
 
-                asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
-                # print("send audio")
-                started_talking = False
-                send_data = np.empty(0, dtype=np.int16)
-                loop_num = 0
-                await asyncio.sleep(0.01)
+                # asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
+                await ws.send_audio(audio=send_data.tobytes())
+                print("send audio", send_data.size)
 
-            if started_talking:
-                print(".", end="") 
-            else: 
-                print(",", end="")
+                # Reset state after sending
+                send_data = np.empty(0, dtype=np.int16)
+                last_quiet_chunks_buffer = []
+                started_talking = False
+                quite_chunk_count = 0
+                # await asyncio.sleep(0.001) # Needed for reasons
+
+            # if started_talking:
+            #     print(".", end="") 
+            # else: 
+            #     print(",", end="")
 
     except KeyboardInterrupt:
         # Graceful exit on keyboard interrupt
+        print("\nKeyboard interupt recieved.\nRecoding done!")
+        pass
+    except Exception as e:
+        print(f"\nUnkown exception: {e}.\nRecoding stopped!")
         pass
     finally:
         # Stop and close
@@ -176,7 +192,6 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
         record_file.close()
         send_file.close()
         await ws.close()
-        print("Done!")
 
 def get_default_speaker_and_mic(audio, speaker_id, mic_id):
 
@@ -185,8 +200,8 @@ def get_default_speaker_and_mic(audio, speaker_id, mic_id):
     default_speakers = audio.get_device_info_by_index(wasapi_info["defaultOutputDevice"] if speaker_id is None else speaker_id)
     default_mic = audio.get_device_info_by_index(wasapi_info["defaultInputDevice"] if mic_id is None else mic_id)
 
-    print("default_speakers:", default_speakers)
-    print("default_mic:", default_mic)
+    # print("default_speakers:", default_speakers)
+    # print("default_mic:", default_mic)
 
     # Try to find loopback device with same name(and [Loopback suffix]).
     if not default_speakers["isLoopbackDevice"]:
@@ -212,6 +227,8 @@ def get_default_speaker_and_mic(audio, speaker_id, mic_id):
                 except:
                     print("Invalid input. Retry.")
 
+    # print("default_speakers:", default_speakers)
+    # print("default_mic:", default_mic)
     return default_speakers, default_mic
 
 
