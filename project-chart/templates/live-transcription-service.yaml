@@ -9,6 +9,6 @@ spec:
   ports:
     - port: {{ .Values.api.port_guest }}
       targetPort: {{ .Values.api.port_guest }}
-      name: livetranscription
+      name: livetranscript
   selector:
     name: {{ .Values.live_transcription.name }}
