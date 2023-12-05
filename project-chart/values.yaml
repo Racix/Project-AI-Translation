@@ -56,7 +56,7 @@ live-transcription:
   repository: tonytonfisk/livetranscription
   tag: "latest"
   pullPolicy: Always
-  name: live-transcription
+  name: livetranscription
   port: 8085
 
 
