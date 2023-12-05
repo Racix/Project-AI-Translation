@@ -8,7 +8,6 @@ from yaml import safe_load
 from datetime import datetime
 from webrtcvad import Vad
 from pyperclip import copy as pyperclipCopy
-import time
 
 def main():
     config = safe_load(open("config.yaml"))
@@ -24,10 +23,10 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
     logger.addHandler(logging.StreamHandler())
 
     # "MAGIC" PARAMETER NUMBERS
-    QUIET_CHUNKS_SAVE_MAX = 20
     QUIET_CHUNKS_CUTOFF_WINDOW = 5
     VOICE_SENSITIVITY = 3 # VAD (Voice Activity Detection) sensitivity level (1 to 3, higher is more sensitive)
-    MAX_SEND_SIZE = 50000
+    QUIET_TIME_BEFORE_VOICE_MAX = 1200 #ms
+    MAX_SEND_LEN = 5 #sec
 
     audio = PyAudio()
     default_speakers, default_mic = get_default_speaker_and_mic(audio, speaker_id, mic_id)
@@ -37,12 +36,13 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
     FORMAT = paInt16
     SAMPLE_SIZE = audio.get_sample_size(FORMAT)
     SAMPLE_RATE = 16000
+    MAX_SEND_SIZE = MAX_SEND_LEN * SAMPLE_RATE
     NUMBER_CHANNELS = 1
     SPEAKER_RATIO = default_speakers["defaultSampleRate"] / SAMPLE_RATE
     MIC_RATIO = default_mic["defaultSampleRate"] / SAMPLE_RATE
-    CHUCK_DURATION = 30 # ms
-    SPEAKER_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * SPEAKER_RATIO / 1000) * 2 # I do not know why * 2 is needed but it does not work without ¯\_(ツ)_/¯
-    MIC_CHUNK = int(CHUCK_DURATION * SAMPLE_RATE * MIC_RATIO / 1000) * 2
+    CHUNK_DURATION = 30 # ms
+    SPEAKER_CHUNK = int(CHUNK_DURATION * SAMPLE_RATE * SPEAKER_RATIO / 1000) * 2 # I do not know why * 2 is needed but it does not work without ¯\_(ツ)_/¯
+    MIC_CHUNK = int(CHUNK_DURATION * SAMPLE_RATE * MIC_RATIO / 1000) * 2
     
     # print(f"SAMPLE_RATE: {SAMPLE_RATE}, NUMBER_CHANNELS: {NUMBER_CHANNELS}, SPEAKER_RATIO: {SPEAKER_RATIO}, MIC_RATIO: {MIC_RATIO}, CHUNK_DURATION: {CHUCK_DURATION}, SPEAKER_CHUNK: {SPEAKER_CHUNK}, MIC_CHUNK: {MIC_CHUNK}")
 
@@ -86,7 +86,6 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
 
     # Loop state variables
     send_data = np.empty(0, dtype=np.int16)
-    last_quiet_chunks_buffer = []
     started_talking = False
     quite_chunk_count = 0
     i = 0
@@ -133,38 +132,30 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
             combined_data = speaker_data + mic_data
             # print("Combined stats:", combined_data.shape, np.min(combined_data), np.max(combined_data), np.mean(combined_data))
 
-            # await asyncio.sleep(10)
-
             record_file.writeframes(combined_data) # write to file for debug
 
+            send_data = np.append(send_data, combined_data).astype(np.int16)
             if vad.is_speech(combined_data, SAMPLE_RATE) and not send_data.size > MAX_SEND_SIZE:
                 # print("!", end="")
                 quite_chunk_count = 0
-                send_data = np.append(send_data, combined_data)
                 started_talking  = True
                 continue
-            
-            if started_talking:
-                # Append the quiet sound (or missed voice sound by VAD) when started talking (to try and prevent sending a part of a word/sentence)
-                send_data = np.append(send_data, combined_data).astype(np.int16)
-            else:
+
+            if not started_talking:
                 # Save the last quiet chunks before someone talked to improve the start of segments
-                if len(last_quiet_chunks_buffer) >= QUIET_CHUNKS_SAVE_MAX:
-                    last_quiet_chunks_buffer.pop(0)
-                last_quiet_chunks_buffer.append(combined_data)
+                if send_data.size >= combined_data.size*QUIET_TIME_BEFORE_VOICE_MAX/CHUNK_DURATION:
+                    send_data = send_data[combined_data.size:]
 
             quite_chunk_count+= 1
             if (quite_chunk_count >= QUIET_CHUNKS_CUTOFF_WINDOW and started_talking) or send_data.size > MAX_SEND_SIZE:
-                send_data = np.append(np.array(last_quiet_chunks_buffer).flatten().astype(np.int16), send_data).astype(np.int16)
                 send_file.writeframes(send_data) # write to debug file 
 
                 # asyncio.create_task(ws.send_audio(audio=send_data.tobytes()))
                 await ws.send_audio(audio=send_data.tobytes())
-                print("send audio", send_data.size)
+                # print("send audio", send_data.size)
 
                 # Reset state after sending
                 send_data = np.empty(0, dtype=np.int16)
-                last_quiet_chunks_buffer = []
                 started_talking = False
                 quite_chunk_count = 0
                 # await asyncio.sleep(0.001) # Needed for reasons
@@ -179,7 +170,7 @@ async def sound_driver(room_id, ip_address, speaker_id, mic_id):
         print("\nKeyboard interupt recieved.\nRecoding done!")
         pass
     except Exception as e:
-        print(f"\nUnkown exception: {e}.\nRecoding stopped!")
+        print(f"\nUnkown exception: {e}.\nRecoding interupted!")
         pass
     finally:
         # Stop and close
