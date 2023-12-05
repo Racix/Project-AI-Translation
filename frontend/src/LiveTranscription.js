@@ -6,8 +6,7 @@ const LiveTranscription = () => {
   const [socket, setSocket] = useState(null);
   const [transcriptionData, setTranscriptionData] = useState([]);
 
-//   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
-  const BASE_URL = "130.240.200.128:8080";
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
   const connectToWebSocket = () => {
     const newSocket = new WebSocket(`ws://${BASE_URL}/ws/live-transcription/${roomId}`);
@@ -25,7 +24,6 @@ const LiveTranscription = () => {
       const data = JSON.parse(event.data);
       console.log('WebSocket message received:', data);
       handleTranscriptionData(data);
-      // Handle incoming messages from the WebSocket
     };
   };
 
@@ -50,11 +48,6 @@ const LiveTranscription = () => {
         data.pop();
         lastIndex = data.length - 1;
       }
-      const res = data.concat(newData.transcription.segments)
-      console.log("RES")
-      res.map((item, index) => (
-        console.log(item.start, " : ", item.duration, " : ", item.text)
-      ))
 
       return data.concat(newData.transcription.segments);
     });
