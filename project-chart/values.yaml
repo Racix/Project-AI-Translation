@@ -38,7 +38,7 @@ transcription:
 
 diarization:
   repository: tonytonfisk/diarization
-  tag: "latest"
+  tag: "cuda118"
   pullPolicy: Always
   name: diarization
   port: 8082
