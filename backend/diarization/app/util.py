@@ -28,7 +28,7 @@ def initialize_dirs():
 
 def delete_dirs(timestamp):
     """
-    this will delete ALL folders created in the MAIN_DIR and all of its content.
+    this will delete ALL folders created in the TIMESTAMP_DIR and all of its content.
     """ 
     global CONFIG_DIR, DIARIZE_TMP_DIR, OUTPUT_DIR
     shutil.rmtree(os.path.join(MAIN_DIR, str(timestamp)))

@@ -1,0 +1,11 @@
+llama-index 
+transformers
+scipy
+uvicorn==0.23.2
+ipython
+Pillow
+fastapi==0.103.2
+python-multipart
+accelerate
+matplotlib
+llama-cpp-python

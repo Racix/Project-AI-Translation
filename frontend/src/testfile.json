@@ -1,0 +1,19 @@
+{
+    "message": {
+      "summary":"",
+      "diarization": {
+        "Detected language": "",
+        "Language probability": 0,
+        "segments": [
+          {
+            "text": "",
+            "start": 0,
+            "duration": 0,
+            "speaker": "",
+            "overlap_percentage": 0
+          }
+        ]
+      }
+    },
+    "media_id": ""
+  }
