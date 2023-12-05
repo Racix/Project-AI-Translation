@@ -42,7 +42,6 @@ db = client["api"]
 media_col = db["media"]
 analysis_col = db["analysis"]
 translate_col = db["translation"]
-print(client) #TODO print for debug connection 
 
 # Websocket status managers
 analysisManager = ConnectionManager()
@@ -316,25 +315,27 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #Set a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
-    max_state_len  = 35
-    min_state_len  = 25
-    min_len_sent  = 5
+    max_state_len = 35
+    min_state_len = 25
+    max_len_sent = 10
+    min_len_sent = 4
 
     if live_id not in LIVE_RECORDING_STATE:
-        LIVE_RECORDING_STATE[live_id] = [0, []]
-    state = LIVE_RECORDING_STATE[live_id][1]
+        LIVE_RECORDING_STATE[live_id] = [0, [], []] # [total_time, state, old_segments]
     total_time = LIVE_RECORDING_STATE[live_id][0]
+    state = LIVE_RECORDING_STATE[live_id][1]
+    old_segments = LIVE_RECORDING_STATE[live_id][2]
     
     await liveTransciptionManager.connect(websocket, live_id)
 
     try:
         while True:
-            bytes = await websocket.receive_bytes()
-            bytes = np.frombuffer(bytes, dtype=np.int16)
-            total_time += bytes.size/SAMPLE_RATE
+            audio_bytes = await websocket.receive_bytes()
+            audio_bytes = np.frombuffer(audio_bytes, dtype=np.int16)
+            total_time += audio_bytes.size/SAMPLE_RATE
             LIVE_RECORDING_STATE[live_id][0] = total_time
 
-            state.append(bytes)
+            state.append(audio_bytes)
             state_len = state_length(state)
             while state_len > max_state_len and state_len-(state[0].size/SAMPLE_RATE) > min_state_len:
                 state.pop(0)
@@ -357,19 +358,21 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
                 print("Unkonwn error while live transcribing:", e)
 
             if transcription is not None:
-                newSegments = []
+                new_segments = []
                 absolute_start_time = total_time - state_len # time from start of recording to start of this recorded auido
-                cutoff_time = total_time - min_len_sent # cutoff time to send to the frontend
+                min_cutoff_time = total_time - min_len_sent # min cutoff time to send to the frontend
+                max_cutoff_time = total_time - max_len_sent # max cutoff time to send to the frontend
 
                 # Calculate real time from start of recording and only take the last segments
                 for segment in reversed(transcription['transcription']['segments']):
-                    segment["start"] = int(segment["start"] + absolute_start_time) # Assume that convert start to int is good enough
+                    segment["start"] = int(segment["start"] + absolute_start_time) # Assume that convert start to int is good enough for comparision
                     segment["duration"] = round(segment["duration"], 2)
-                    newSegments.insert(0, segment)
-                    if segment["start"] < cutoff_time:
+                    new_segments.insert(0, segment)
+                    if (segment["start"] < min_cutoff_time and lines_up_with_old(segment, old_segments) or segment["start"] < max_cutoff_time):
                         break
 
-                transcription['transcription']['segments'] = newSegments
+                transcription['transcription']['segments'] = new_segments
+                old_segments = new_segments
             
             print("transcription:", transcription)
             if transcription is not None:
@@ -461,7 +464,7 @@ def to_mono(file_path: str):
     sf.write(file_path, y, sr)
 
 
-def state_length(state: list[list]):
+def state_length(state: list[list]) -> float:
     """State lenght in seconds"""
     length = 0
     for sound in state:
@@ -470,9 +473,17 @@ def state_length(state: list[list]):
     return length/SAMPLE_RATE
 
 
-def bytes_to_wave(state: list[list]):
+def lines_up_with_old(segment: dict[str, str], old_segments: list[dict[str, str]]) -> bool:
+    for old_seg in reversed(old_segments):
+        if segment["start"] == old_seg["start"]:
+            return True
+        elif segment["start"] > old_seg["start"]:
+            return False
+    return False
+
+
+def bytes_to_wave(state: list[list]) -> bytes:
     """State of chunks of audio bytes to wav file"""
-    # Ensure the array is of type int16
 
     # Create a wave file in memory
     with io.BytesIO() as wave_buffer:
@@ -484,8 +495,4 @@ def bytes_to_wave(state: list[list]):
             wave_file.writeframes(data.tobytes())
             
         # Get the wave file data from the buffer
-        wave_data = wave_buffer.getvalue()
-        with open('output.wav', 'wb') as output_file: # TODO for debug remove
-            output_file.write(wave_data)
-
-        return wave_data
+        return wave_buffer.getvalue()
