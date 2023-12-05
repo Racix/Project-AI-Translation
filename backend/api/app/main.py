@@ -290,10 +290,8 @@ async def delete_translation(media_id: str, language: str):
     try_find_media(media_id)
     try_find_analysis(media_id)
     try_find_translation(media_id,language)
-
-    res = translate_col.delete_one({"$and":[{"media_id": ObjectId(media_id)}, {"translation.language": language}]})
-
-    print(res)
+    # find right field, media_id & language
+    translate_col.delete_one({"$and":[{"media_id": ObjectId(media_id)}, {"translation.language": language}]})
 
     return {"message": "Translation(" + language + ") deleted successfully", "media_id": media_id}
 
@@ -434,6 +432,7 @@ async def delete_media_summary(media_id: str):
     try_find_media(media_id)
     try_find_analysis(media_id)
 
+    # Find and remove the summary feild
     analysis_col.update_one({"media_id": ObjectId(media_id)}, { "$unset": {"summary": ""}}) 
 
     return {"message": "Summary deleted successfully", "media_id": media_id}
