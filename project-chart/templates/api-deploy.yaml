@@ -20,7 +20,7 @@ spec:
         - name: {{ .Values.api.name }}
           image: "{{ .Values.api.repository }}:{{ .Values.api.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.api.pullPolicy }}
-          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
+          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}", "--ws-ping-timeout", "300.0", "--ws-ping-interval", "300.0" ]  
           ports:
             - name: api
               containerPort: {{ .Values.api.port }}
