@@ -291,7 +291,9 @@ async def delete_translation(media_id: str, language: str):
     try_find_analysis(media_id)
     try_find_translation(media_id,language)
 
-    translate_col.delete_one({"media_id": ObjectId(media_id)})
+    res = translate_col.delete_one({"$and":[{"media_id": ObjectId(media_id)}, {"translation.language": language}]})
+
+    print(res)
 
     return {"message": "Translation(" + language + ") deleted successfully", "media_id": media_id}
 
