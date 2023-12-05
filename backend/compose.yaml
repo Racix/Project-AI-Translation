@@ -5,7 +5,7 @@ services:
     build:
       context: api
       dockerfile: Dockerfile
-    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST} --ws-ping-timeout 300.0 --ws-ping-interval 300.0
     depends_on:
       - db
     stdin_open: true
