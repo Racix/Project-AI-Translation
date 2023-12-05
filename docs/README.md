@@ -1,4 +1,19 @@
 # Weekly blog
+## Friday - 2023-12-01
+Weekly update, we are now able to deploy everything to Google Kubernetes Engine using their compute power, have not yet deployed live transcription and translation service to the cluster, the other serivces are deployed and mostly working with some minor bugs. As for the other services we are making progress in alot of areas and we got some pull requests that are in review and that should be merged soon.
+
+
+## Friday - 2023-11-24
+Weekly update, we have made some progress for several parts of our project.
+
+**Live transcription:** </br>
+Live transcription service works now with minor bugs, websockets closing randomly. Have yet to be integrated with the frontend, should be done next week.
+
+**Translation:** </br>
+The translation service have been reviewed and merged into main. Some changes were made, changed to argos translate instead to translate the whole text instead of sentences to capture context. Work for integrating this to the frontend have been made.
+
+**Kubernetes:** </br>
+We have managed to deploy our services onto a local kubernetes cluster using docker-desktop and helm. Possibly might be able to deploy it onto the rise ice kubernetes cluster next week to run our services.
 
 ## Friday - 2023-11-17
 During the past three weeks we have created a microservice out of the translation and we are working on making a summary-of-transcriptions functionallity into a microservice using the language model LLaMA.
