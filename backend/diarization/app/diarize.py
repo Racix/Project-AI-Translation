@@ -6,7 +6,7 @@ import wget
 import os
 
 
-def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) -> OmegaConf:
+def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int = None) -> OmegaConf:
     # Configuration yaml file
     DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
@@ -50,7 +50,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) 
     config.diarizer.speaker_embeddings.parameters.multiscale_weights= [1,1,1,1,1]
     config.diarizer.oracle_vad = False # ----> ORACLE VAD Sätt till false om vi inte vill ha RTTM!!!
     config.diarizer.vad.model_path = pretrained_vad
-    config.diarizer.clustering.parameters.oracle_num_speakers = False
+    config.diarizer.clustering.parameters.oracle_num_speakers = False if speakers is None else True #False if speakers is nonec
     return config
 
 
@@ -66,7 +66,7 @@ def msdd_diarization(config: OmegaConf):
 #     oracle_vad_clusdiar_model.diarize()
 
 
-def create_diarization(file_path: str, rttm: str | None, speakers: int):
+def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
     config = configurations(file_path, "telephonic", rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)
