@@ -41,5 +41,5 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
         os.remove(file_path)
         ut.delete_dirs(timestamp)
 
-    return {"diarization": diarization_segments}
+    return {"diarization": transcription}
     

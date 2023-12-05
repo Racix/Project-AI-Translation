@@ -5,7 +5,7 @@ services:
     build:
       context: api
       dockerfile: Dockerfile
-    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST} --ws-ping-timeout 300.0 --ws-ping-interval 300.0
     depends_on:
       - db
     stdin_open: true
@@ -72,6 +72,32 @@ services:
     networks:
       backend_network:
         ipv4_address: ${TRANSCRIPTION_ADDRESS}
+    env_file:
+      - .env
+
+  live-transcription:
+    image: live-transcription:latest
+    build:
+      context: live-transcription
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT_GUEST}
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    ports:
+      - "${LIVE_TRANSCRIPTION_PORT_HOST}:${API_PORT_GUEST}"
+    networks:
+      backend_network:
+        ipv4_address: ${LIVE_TRANSCRIPTION_ADDRESS}
     env_file:
       - .env
 
