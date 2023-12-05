@@ -52,11 +52,11 @@ summarization:
   name: summarization
   port: 8084
 
-live-transcription:
+live_transcription:
   repository: tonytonfisk/livetranscription
   tag: "latest"
   pullPolicy: Always
-  name: livetranscription
+  name: live_transcription
   port: 8085
 
 

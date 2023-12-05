@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.live-transcription.name }}
+  name: {{ .Values.live_transcription.name }}
   labels:
-    name: {{ .Values.live-transcription.name }}
+    name: {{ .Values.live_transcription.name }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      name: {{ .Values.live-transcription.name }}
+      name: {{ .Values.live_transcription.name }}
   template:
     metadata:
       labels:
-        name: {{ .Values.live-transcription.name }}
+        name: {{ .Values.live_transcription.name }}
     spec:
       containers:
-        - name: {{ .Values.live-transcription.name }}
-          image: "{{ .Values.live-transcription.repository }}:{{ .Values.live-transcription.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.live-transcription.pullPolicy }}
+        - name: {{ .Values.live_transcription.name }}
+          image: "{{ .Values.live_transcription.repository }}:{{ .Values.live_transcription.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.live_transcription.pullPolicy }}
           command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
           ports:
-            - name: live-transcription
-              containerPort: {{ .Values.live-transcription.port }}
+            - name: live_transcription
+              containerPort: {{ .Values.live_transcription.port }}
               protocol: TCP
           envFrom:
           - configMapRef:
