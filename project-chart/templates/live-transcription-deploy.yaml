@@ -22,7 +22,7 @@ spec:
           imagePullPolicy: {{ .Values.live_transcription.pullPolicy }}
           command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
           ports:
-            - name: live_transcription
+            - name: livetranscription
               containerPort: {{ .Values.live_transcription.port }}
               protocol: TCP
           envFrom:
