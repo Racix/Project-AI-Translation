@@ -313,17 +313,17 @@ async def analysis_websocket(websocket: WebSocket, media_id: str):
 
 @app.websocket("/ws/live-transcription/{live_id}")
 async def live_transcription_websocket(websocket: WebSocket, live_id: str):
-    timeout_seconds = 30 #TODO Find a good timeout
+    timeout_seconds = 30 #Set a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
-    max_queue_len  = 35
-    min_queue_len  = 25
+    max_state_len  = 35
+    min_state_len  = 25
     min_len_sent  = 5
 
     if live_id not in LIVE_RECORDING_STATE:
         LIVE_RECORDING_STATE[live_id] = [0, []]
-    queue = LIVE_RECORDING_STATE[live_id][1]
-    total_time =  LIVE_RECORDING_STATE[live_id][0]
+    state = LIVE_RECORDING_STATE[live_id][1]
+    total_time = LIVE_RECORDING_STATE[live_id][0]
     
     await liveTransciptionManager.connect(websocket, live_id)
 
@@ -334,13 +334,13 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
             total_time += bytes.size/SAMPLE_RATE
             LIVE_RECORDING_STATE[live_id][0] = total_time
 
-            queue.append(bytes)
-            queue_len = queue_length(queue)
-            while queue_len > max_queue_len and queue_len-(queue[0].size/SAMPLE_RATE) > min_queue_len:
-                queue.pop(0)
-                queue_len = queue_length(queue)
+            state.append(bytes)
+            state_len = state_length(state)
+            while state_len > max_state_len and state_len-(state[0].size/SAMPLE_RATE) > min_state_len:
+                state.pop(0)
+                state_len = state_length(state)
 
-            data = bytes_to_wave(queue)
+            data = bytes_to_wave(state)
             filename = datetime.now().strftime(f'live_id_{live_id}_%Y_%m_%d_%H_%M_%S_%f.wav')
             form_data = aiohttp.FormData()
             form_data.add_field('file', data, filename=filename, content_type='audio/wav')
@@ -358,15 +358,15 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
 
             if transcription is not None:
                 newSegments = []
-                absolute_time = total_time - queue_len # time from start of recording to start of this recorded auido
-                delta_time = total_time - min_len_sent # minimum time cutoff to send to the frontend
+                absolute_start_time = total_time - state_len # time from start of recording to start of this recorded auido
+                cutoff_time = total_time - min_len_sent # cutoff time to send to the frontend
 
+                # Calculate real time from start of recording and only take the last segments
                 for segment in reversed(transcription['transcription']['segments']):
-                    # segment["start"] = round(segment["start"] + absolute_time, 2)
-                    segment["start"] = int(segment["start"] + absolute_time)
+                    segment["start"] = int(segment["start"] + absolute_start_time) # Assume that convert start to int is good enough
                     segment["duration"] = round(segment["duration"], 2)
                     newSegments.insert(0, segment)
-                    if segment["start"] < delta_time:
+                    if segment["start"] < cutoff_time:
                         break
 
                 transcription['transcription']['segments'] = newSegments
@@ -461,25 +461,24 @@ def to_mono(file_path: str):
     sf.write(file_path, y, sr)
 
 
-def queue_length(queue):
-    """Queue lenght in seconds"""
+def state_length(state: list[list]):
+    """State lenght in seconds"""
     length = 0
-    for sound in queue:
+    for sound in state:
         length += len(sound)
 
     return length/SAMPLE_RATE
 
 
-def bytes_to_wave(queue):
-    """Queue of chunks of audio bytes to wav file"""
+def bytes_to_wave(state: list[list]):
+    """State of chunks of audio bytes to wav file"""
     # Ensure the array is of type int16
-    n_channels = 1
-    
+
     # Create a wave file in memory
     with io.BytesIO() as wave_buffer:
         with wave.open(wave_buffer, 'w') as wave_file:
-            data = np.concatenate(queue)
-            wave_file.setnchannels(n_channels)  # 1 channel (mono)
+            data = np.concatenate(state)
+            wave_file.setnchannels(1)  # 1 channel (mono)
             wave_file.setsampwidth(2)   # 2 bytes per sample (16-bit PCM)
             wave_file.setframerate(SAMPLE_RATE)
             wave_file.writeframes(data.tobytes())
