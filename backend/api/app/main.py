@@ -70,7 +70,7 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
 
     # Write file in the background
     background_tasks.add_task(write_mono_wav_file, file_path, wav_path)
-
+    
     # Parse data and insert into database
     data = {
         "name": file.filename, 
@@ -171,7 +171,7 @@ async def analyze(file_path: str, wav_path: str, media_id: str, speakers: int = 
                 form = aiohttp.FormData()
                 form.add_field('json_data', json.dumps(transcription), content_type='application/json')
                 form.add_field('file', file)
-                form.add_field('speakers', str(speakers) if speakers is not None else '')
+                form.add_field('speakers', str(speakers) if speakers is not None else 'No speakers')
                 async with session.post(diarize_url, data=form) as response:
                     if response.status == status.HTTP_201_CREATED:
                         diarization = await response.json()

@@ -6,7 +6,7 @@ import wget
 import os
 
 
-def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int) -> OmegaConf:
+def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int = None) -> OmegaConf:
     # Configuration yaml file
     DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
@@ -66,7 +66,7 @@ def msdd_diarization(config: OmegaConf):
 #     oracle_vad_clusdiar_model.diarize()
 
 
-def create_diarization(file_path: str, rttm: str | None, speakers: int):
+def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
     config = configurations(file_path, "telephonic", rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)
