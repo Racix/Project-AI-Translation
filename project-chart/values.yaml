@@ -5,9 +5,9 @@
 replicaCount: 1
 
 frontend:
-  repository: tonytonfisk/frontend-frontend
+  repository: tonytonfisk/frontend
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   name: frontend
   port: 80
 
@@ -17,7 +17,7 @@ service:
 api:
   repository: tonytonfisk/api
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   name: api
   port: 8080
   port_guest: 8000
@@ -31,7 +31,7 @@ database:
 
 transcription:
   repository: tonytonfisk/transcription
-  tag: "tiny"
+  tag: "largev2"
   pullPolicy: Always
   name: "transcription"
   port: 8081
@@ -43,12 +43,21 @@ diarization:
   name: diarization
   port: 8082
 
+#translation:
+
 summarization:
   repository: tonytonfisk/summarization
   tag: "latest"
   pullPolicy: Always
   name: summarization
   port: 8084
+
+live-transcription:
+  repository: tonytonfisk/livetranscription
+  tag: "latest"
+  pullPolicy: Always
+  name: live-transcription
+  port: 8085
 
 
 resources: 

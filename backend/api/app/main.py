@@ -129,7 +129,7 @@ async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks)
 
 
 async def analyze(file_path: str, wav_path: str, media_id: str, speakers: int = None):
-    timeout_seconds = 600 #TODO Find a good timeout
+    timeout_seconds = 1800 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
     diarize_url = f"http://{os.environ['DIARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/diarize"

@@ -15,8 +15,11 @@ data:
     DIARIZATION_ADDRESS: "diarization.default.svc.cluster.local"
     SUMMARIZATION_PORT_HOST: "8084"
     SUMMARIZATION_ADDRESS: "summarization.default.svc.cluster.local" 
+    LIVE_TRANSCRIPTION_PORT_HOST: "8085"
+    LIVE_TRANSCRIPTION_ADDRESS: "live-transcription.svc.cluster.local"
     REACT_APP_BACKEND_URL: "api.default.svc.cluster.local"
     #TRANSLATION_PORT_HOST: "8083"
     #TRANSLATION_ADDRESS: "translation.default.svc.cluster.local"
+
 
 

@@ -4,6 +4,7 @@ import app.util as ut
 import json
 import os
 from fastapi import FastAPI, HTTPException, status, UploadFile, Form
+import torch
 
 app = FastAPI()
 
@@ -38,6 +39,7 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:
+        torch.cuda.empty_cache()
         os.remove(file_path)
         ut.delete_dirs(timestamp)
 

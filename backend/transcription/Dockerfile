@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir --upgrade -r /transcription/requirements.txt
 
 COPY ./loadModel.py /transcription/loadModel.py
 
-RUN python3.10 /transcription/loadModel.py
+RUN python3 /transcription/loadModel.py
 
 COPY ./app /transcription/app

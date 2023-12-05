@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.0.0-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 
 WORKDIR /diarization
 
@@ -21,8 +21,5 @@ COPY ./requirements.txt /diarization/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade Cython==3.0.3
 RUN pip install --no-cache-dir --upgrade -r /diarization/requirements.txt
-
+RUN pip install torch==2.1.1+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 COPY ./app /diarization/app
-
-
-

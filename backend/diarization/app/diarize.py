@@ -56,7 +56,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int =
 
 def msdd_diarization(config: OmegaConf):
     #Multi-scale model
-    oracle_vad_msdd_model = NeuralDiarizer(cfg=config)
+    oracle_vad_msdd_model = NeuralDiarizer(cfg=config).to(config.device)
     oracle_vad_msdd_model.diarize()
 
 
