@@ -6,7 +6,7 @@ replicaCount: 1
 
 frontend:
   repository: tonytonfisk/frontend
-  tag: "latest"
+  tag: "34.118.114.181"
   pullPolicy: Always
   name: frontend
   port: 80
@@ -54,7 +54,7 @@ summarization:
 
 live_transcription:
   repository: tonytonfisk/livetranscription
-  tag: "latest"
+  tag: "cuda"
   pullPolicy: Always
   name: livetranscript
   port: 8085
