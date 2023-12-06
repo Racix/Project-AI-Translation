@@ -54,7 +54,7 @@ summarization:
 
 live_transcription:
   repository: tonytonfisk/livetranscription
-  tag: "cuda"
+  tag: "base32"
   pullPolicy: Always
   name: livetranscript
   port: 8085
