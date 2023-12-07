@@ -1,7 +1,7 @@
 from transformers import pipeline
 import torch
 
-MODEL_NAME = "openai/whisper-large-v2"
+MODEL_NAME = "openai/whisper-medium"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 whisper_pipeline = pipeline(
