@@ -3,9 +3,11 @@ import "./styles/TranscriptionDisplay.css";
 import penIcon from "./img/penIcon.svg";
 import { useParams } from "react-router-dom";
 import testfile from "./testfile.json"; //change to your testfile
+import Translating from "./Translating";
 
 function TranscriptionDisplay() {
   const [testing] = useState(false); //set to true to use element 'testfile' as outprint (limited functionality)
+  const [translating, setTranslating] = useState(true); //true when waiting on a translation to be done, false otherwise
   const { id } = useParams();
   const [transcriptionData, setTranscriptionData] = useState([]);
   const [originalTransData, setOriginalTransData] = useState([]);
@@ -25,15 +27,20 @@ function TranscriptionDisplay() {
   const [isTranslation, setIsTranslation] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
-  /* TODO: get available languages from API call? */
-  const languageMap = {
-    sv: "Svenska",
+  const languageMap = { //TODO change to api call asking for available languages
     en: "English",
-    ru: "Русский",
-    ja: "日本語",
+    sv: "Svenska",
+    fi: "suomen kieli",
+    fr: "Français",
+    es: "Español",
+    de: "Deutsch",
+    nl: "Nederlands",
+    pl: "polski",
+    ar: "عربي",
     zh: "中文",
-    es: "español",
-    fr: "Français"
+    hi: "हिंदी",
+    ru: "Русский",
+    
   };
   const languageOptions = Object.entries(languageMap).map(([value, label]) => ({
     value,
@@ -70,6 +77,7 @@ function TranscriptionDisplay() {
         if (userResponse) {
           // User clicked "OK"
           console.log("User clicked OK");
+          setTranslating(true);
         } else {
           // User clicked "Cancel"
           console.log("User clicked Cancel");
@@ -80,12 +88,11 @@ function TranscriptionDisplay() {
             method: "POST",
           }
         )
+        setTranslating(false);
       }
       if (response.ok) {
         const data = await response.json(); // First parse the entire JSON response
-        console.log("TYOO: ", data)
-        console.log("sl: ", originalLanguage)
-        const segments = segmentFrom==="diarization" ? data.diarization.segments : data.translation.segments; // Then access the required properties
+        const segments = segmentFrom==="diarization" ? data.diarization.segments : [data.translation.segments]; // Then access the required properties
         setTranscriptionData(segments);
         setTextChanged(false);
         setIsTranslation(segmentFrom==="translation");
@@ -291,179 +298,183 @@ function TranscriptionDisplay() {
       {testing &&
        <h2>testing mode is active</h2>
       }
-      <div>
-        <div className="transcription-buttons-container">
-          <div>
-            {
-              summaryData
-              ? (
-                  // If summaryData is true
-                  <button
-                    onClick={() => setSummaryVisible(!summaryVisible)}
-                    className="summary-button blue-button"
-                  >
-                    Summary
-                  </button>
-                )
-              : ( // If false, check if there is transcription
-                  transcriptionData.length > 0 && (
-                    !buttonClicked ? (
-                      <button
-                        className="summary-button blue-button"
-                        onClick={() => handleSummaryClick()}>
-                        Summarize
-                      </button>
-                    ) : (
-                      data && <div className="message-field">{data.message}</div>
-                    )
-                  )
-              )
-            }
-            {transcriptionData.length > 0 &&
-              <select 
-                name="language"
-                className="language-dropdown" 
-                value={selectedLanguage} 
-                onChange={handleLanguageSelection}>
-                <option value="" disabled hidden>Translation</option>
-                <option value={originalLanguage}>{"Original (" + (languageMap[originalLanguage] || originalLanguage) + ")"}</option>
-                {languageOptions.map((option, index) => (
-                  option.value !== originalLanguage &&
-                  <option key={index} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            }
-          </div>
-          <div className="text-edit-buttons">
-          {textChanged &&
-            <button
-              onClick={() => cancelTranscriptionEdits()}
-              className="cancel-button blue-button"
-            >
-              Cancel
-            </button>
-          }
-          { textChanged &&
-            <button
-              onClick={() => uploadTranscriptionEdits()}
-              className="save-button blue-button"
-            >
-              Save Changes
-            </button>
-          }
-          </div>
-          
-        </div>
-        {summaryVisible &&
-          <div className="summary-box">
-            {summaryData}
-          </div>
-        }
-        {transcriptionData &&
-          transcriptionData.map((item, index) => {
-            
-            const currentSpeaker = item.speaker;
-            const showSpeaker = currentSpeaker !== previousSpeaker;
-            previousSpeaker = currentSpeaker;
-            return (
-              isTranslation ? (
-                <div key={index} className="transcription-item">
-                  <p className="transcription-text">
-                  <span>{item.text}</span>
-                  </p>
-                </div>
-              ) : (
-                <div key={index} className="transcription-item">
-                {showSpeaker && (
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <h3>{currentSpeaker}:</h3>
+      {translating ? (
+        <Translating></Translating>     
+      ) : (
+        <div>
+          <div className="transcription-buttons-container">
+            <div>
+              {
+                summaryData
+                ? (
+                    // If summaryData is true
                     <button
-                      className="edit-button"
-                      onClick={() =>
-                        startEditing(index, item.speaker)
-                      }
+                      onClick={() => setSummaryVisible(!summaryVisible)}
+                      className="summary-button blue-button"
                     >
-                      <img src={penIcon} alt="Edit" width="16" height="16" />
+                      Summary
                     </button>
-                    {editingSegmentIndex === index && (
+                  )
+                : ( // If false, check if there is transcription
+                    transcriptionData.length > 0 && (
+                      !buttonClicked ? (
+                        <button
+                          className="summary-button blue-button"
+                          onClick={() => handleSummaryClick()}>
+                          Summarize
+                        </button>
+                      ) : (
+                        data && <div className="message-field">{data.message}</div>
+                      )
+                    )
+                )
+              }
+              {transcriptionData.length > 0 &&
+                <select 
+                  name="language"
+                  className="language-dropdown" 
+                  value={selectedLanguage} 
+                  onChange={handleLanguageSelection}>
+                  <option value="" disabled hidden>Translation</option>
+                  <option value={originalLanguage}>{"Original (" + (languageMap[originalLanguage] || originalLanguage) + ")"}</option>
+                  {languageOptions.map((option, index) => (
+                    option.value !== originalLanguage &&
+                    <option key={index} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              }
+            </div>
+            <div className="text-edit-buttons">
+            {textChanged &&
+              <button
+                onClick={() => cancelTranscriptionEdits()}
+                className="cancel-button blue-button"
+              >
+                Cancel
+              </button>
+            }
+            { textChanged &&
+              <button
+                onClick={() => uploadTranscriptionEdits()}
+                className="save-button blue-button"
+              >
+                Save Changes
+              </button>
+            }
+            </div>
+            
+          </div>
+          {summaryVisible &&
+            <div className="summary-box">
+              {summaryData}
+            </div>
+          }
+          {transcriptionData &&
+            transcriptionData.map((item, index) => {
+              
+              const currentSpeaker = item.speaker;
+              const showSpeaker = currentSpeaker !== previousSpeaker;
+              previousSpeaker = currentSpeaker;
+              return (
+                isTranslation ? (  
+                  <div key={index} className="transcription-item">
+                    <p className="transcription-text">
+                    <span>{item}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div key={index} className="transcription-item">
+                  {showSpeaker && (
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <h3>{currentSpeaker}:</h3>
+                      <button
+                        className="edit-button"
+                        onClick={() =>
+                          startEditing(index, item.speaker)
+                        }
+                      >
+                        <img src={penIcon} alt="Edit" width="16" height="16" />
+                      </button>
+                      {editingSegmentIndex === index && (
+                        <>
+                          <input
+                            className="label-input"
+                            value={tempSpeaker}
+                            onChange={(e) => setTempSpeaker(e.target.value)}
+                          
+                          />
+                          <button
+                            className="change-label-button blue-button"
+                            onClick={() =>
+                              handleChangeCurrentSpeakerLabelConfirm()
+                            }
+                          >
+                            Change this label
+                          </button>
+                          <button
+                            className="change-label-button blue-button"
+                            onClick={() =>
+                              handleChangeAllSpeakerLabelsConfirm(tempSpeaker)
+                            }
+                          >
+                            Change all labels
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <p
+                    className="transcription-text"
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                  >
+                    <span className="time">{formatTime(item.start)}:</span>
+
+                    {editingIndex === index ? (
                       <>
                         <input
-                          className="label-input"
+                          className="text-input"
+                          value={tempText}
+                          onChange={(e) => setTempText(e.target.value)}
+                          onKeyDown={(e) => 
+                            ((e.key === "Enter") && saveText(index)) ||
+                              (e.key === "Escape" && unfocusEditingBlocks())
+                                    }
+                        />
+                        <div className="speaker-tag">speaker: </div>
+
+                        <input
+                          className="text-input-label"
                           value={tempSpeaker}
                           onChange={(e) => setTempSpeaker(e.target.value)}
-                        
+                          onKeyDown={(e) => 
+                            ((e.key === "Enter") && saveText(index)) ||
+                              (e.key === "Escape" && unfocusEditingBlocks())
+                                    }  
                         />
-                        <button
-                          className="change-label-button blue-button"
-                          onClick={() =>
-                            handleChangeCurrentSpeakerLabelConfirm()
-                          }
-                        >
-                          Change this label
-                        </button>
-                        <button
-                          className="change-label-button blue-button"
-                          onClick={() =>
-                            handleChangeAllSpeakerLabelsConfirm(tempSpeaker)
-                          }
-                        >
-                          Change all labels
-                        </button>
                       </>
+                    ) : (
+                      <span>{item.text}</span>
                     )}
-                  </div>
-                )}
-                <p
-                  className="transcription-text"
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                >
-                  <span className="time">{formatTime(item.start)}:</span>
-
-                  {editingIndex === index ? (
-                    <>
-                      <input
-                        className="text-input"
-                        value={tempText}
-                        onChange={(e) => setTempText(e.target.value)}
-                        onKeyDown={(e) => 
-                          ((e.key === "Enter") && saveText(index)) ||
-                            (e.key === "Escape" && unfocusEditingBlocks())
-                                  }
-                      />
-                      <div className="speaker-tag">speaker: </div>
-
-                      <input
-                        className="text-input-label"
-                        value={tempSpeaker}
-                        onChange={(e) => setTempSpeaker(e.target.value)}
-                        onKeyDown={(e) => 
-                          ((e.key === "Enter") && saveText(index)) ||
-                            (e.key === "Escape" && unfocusEditingBlocks())
-                                  }  
-                      />
-                    </>
-                  ) : (
-                    <span>{item.text}</span>
-                  )}
-                  {hoveredIndex === index && editingIndex !== index && (
-                    <button
-                      className="edit-button-style"
-                      onClick={() =>
-                        startEditingBlock(index, item.speaker, item.text)
-                      }
-                    >
-                      <img src={penIcon} alt="Edit" width="16" height="16" />
-                    </button>
-                  )}
-                </p>
-              </div>
-              )
-            );
-          })}
-      </div>
+                    {hoveredIndex === index && editingIndex !== index && (
+                      <button
+                        className="edit-button-style"
+                        onClick={() =>
+                          startEditingBlock(index, item.speaker, item.text)
+                        }
+                      >
+                        <img src={penIcon} alt="Edit" width="16" height="16" />
+                      </button>
+                    )}
+                  </p>
+                </div>
+                )
+              );
+            })}
+        </div>
+      )}
     </div>
   );
 }
