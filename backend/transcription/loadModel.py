@@ -1,3 +1,12 @@
-from faster_whisper import download_model
+from transformers import pipeline
+import torch
 
-download_model("tiny")
+MODEL_NAME = "openai/whisper-large-v2"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+whisper_pipeline = pipeline(
+    "automatic-speech-recognition",
+    model=MODEL_NAME,
+    chunk_length_s=30,
+    device=device,        
+)
