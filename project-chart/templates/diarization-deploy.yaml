@@ -34,10 +34,10 @@ spec:
                 name: env
           resources:
               requests:
-                memory: 2Gi
+                memory: 4Gi
               limits:
                 nvidia.com/gpu: 1
-                memory: 4Gi
+                memory: 8Gi
           volumeMounts:
           - mountPath: /dev/shm
             name: dshm  
