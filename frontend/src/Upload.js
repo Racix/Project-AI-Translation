@@ -242,7 +242,7 @@ function Upload() {
         <span style={{ marginLeft: "10px" }}>{fileName}</span>
       </div>
       {file && (
-        <div className="btn-container">
+        <div className="btn-container label-container">
           <div>
             <h3>Labels:</h3>
             <ul id="labelUl">
