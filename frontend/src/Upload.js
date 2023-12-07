@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./styles/Upload.css";
+import logo from './img/Doris_logo.png'
 
 function Upload() {
   const [file, setFile] = useState(null);
   const [speakers, setSpeakers] = useState(null);
   const [fileList, setFileList] = useState([]);
+  const [lable, setLable] = useState([]);
+  const [info, setInfo] = useState([]);
   const [fileName, setFileName] = useState("No file chosen");
   const [data, setData] = useState(null);
   const [chosenFileID, setChosenFileID] = useState(null);
   const [isDisabled, setIsDisabled] = useState(false);
+  const labelsAsString ='['+ lable.map(label => `{"${label.name}":"${label.description}"}`) + ']';//JSON.stringify(lable);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
+
+  const imageStyle = {
+    listStyle: 'none',
+    padding: '25px 0 25px 85px',
+    backgroundImage: 'url('+logo+')',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'left center',
+    backgroundSize: '80px',
+  };
 
   useEffect(() => {
     fetchFileList();
@@ -137,6 +151,27 @@ function Upload() {
     }
   };
 
+  const addLable = () => {
+    const nameInput = document.querySelector('.num-speakers[placeholder="Name"]');
+    const descriptionInput = document.querySelector('.num-speakers[placeholder="Description"]');
+
+    if (nameInput.value && descriptionInput.value) {
+      const newLabel = {
+        name: nameInput.value,
+        description: descriptionInput.value,
+      };
+
+      setLable((prevLabels) => [...prevLabels, newLabel]);
+
+      nameInput.value = '';
+      descriptionInput.value = '';
+    }
+  };
+
+  const removeLabel = (indexToRemove) => {
+    setLable((prevLabels) => prevLabels.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleClick = (fileId) => {
     if (isDisabled) {
       return;
@@ -151,20 +186,26 @@ function Upload() {
     formData.append("file", file);
     try {
       var response;
+
+      const baseUrl = `http://${BASE_URL}/media/`;
+      const params = new URLSearchParams();
+
       if (speakers) {
-        response = await fetch(
-          `http://${BASE_URL}/media/?speakers=${speakers}`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-      } else {
-        response = await fetch(`http://${BASE_URL}/media/`, {
-          method: "POST",
-          body: formData,
-        });
+        params.append('speakers', speakers);
       }
+
+      if (lable.length > 0) {
+        params.append('lable', labelsAsString);
+      }
+
+      const url = `${baseUrl}${params.toString() ? `?${params.toString()}` : ''}`;
+
+      //const url = `http://${BASE_URL}/media/${speakers ? `?speakers=${speakers}` : ''}${lable.length > 0 ? `&lable=${labelsAsString}` : ''}`;
+
+      response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
 
       if (response.ok) {
         alert("File uploaded successfully!");
@@ -175,6 +216,15 @@ function Upload() {
     } catch (error) {
       console.error("There was an error uploading the file.", error);
     }
+  };
+
+  const openModal = (listOfInfo) => {
+    setInfo(listOfInfo)
+    setIsModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
   };
 
   return (
@@ -193,6 +243,34 @@ function Upload() {
       </div>
       {file && (
         <div className="btn-container">
+          <div>
+            <h3>Labels:</h3>
+            <ul id="lableUl">
+              {lable.map((label, index) => (
+                <li style={imageStyle} key={index}>
+                  <span style={{ fontWeight: 'bold' }}>{label.name}</span><br />
+                  {label.description}
+                  <button className="upload-button" onClick={() => removeLabel(index)}>Remove</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          Lable:
+          <input
+            className="num-speakers"
+            placeholder="Name"
+          />
+          <input
+            className="num-speakers"
+            placeholder="Description"
+          />          
+          <button onClick={addLable} className="upload-button">
+            Add Lable
+          </button>
+        </div>
+      )}
+      {file && (
+        <div className="btn-container">
           Number of speakers:
           <input
             onChange={onSpeakersChange}
@@ -205,6 +283,29 @@ function Upload() {
         </div>
       )}
 
+      {isModalVisible && (
+        <div className="InfoWindow">
+          <button onClick={closeModal} className="close-button upload-button">
+            Close
+          </button>
+          <div className="infoContent">
+            <h3>Labels:</h3>
+            <ul id="lableUl">
+              {info.map((info, index) => (
+                <li style={imageStyle} key={index}>
+                  {Object.entries(info).map(([key, value]) => (
+                    <div key={key}>
+                    <span style={{ fontWeight: 'bold' }}>{key}</span><br />
+                    {value}
+                    </div>
+                  ))}
+
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       <ul className="file-list">
         {fileList.map((file) => (
           <li key={file._id}>
@@ -233,6 +334,12 @@ function Upload() {
                 disabled={isDisabled}
               >
                 Analyze
+              </button>
+              <button
+                onClick={() => openModal(file.lable)}
+                className="analyze-button"
+              >
+                i
               </button>
             </div>
           </li>

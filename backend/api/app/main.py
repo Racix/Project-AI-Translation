@@ -18,8 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 from starlette.responses import FileResponse
 from websockets.exceptions import ConnectionClosedOK
+from typing import List, Dict
 
 app = FastAPI()
+
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,7 +60,7 @@ async def get_all_media():
 
 
 @app.post("/media/", status_code=status.HTTP_201_CREATED)
-async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None):
+async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None, lable: str = ""):
     if not is_media_file(file):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
@@ -68,6 +71,15 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
     wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".mono.wav"
     file_path = os.path.join(UPLOAD_DIR, storage_name)
     wav_path = os.path.join(UPLOAD_DIR, wav_name)
+
+    try:
+        if lable == "":
+            lable = []
+        else:
+            lable = json.loads(lable)
+    except json.JSONDecodeError:
+        lable = []
+        print("Input is not a valid JSON string.")
 
     # Save the uploaded media locally
     with open(file_path, "wb") as media_file:
@@ -82,7 +94,8 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
         "file_path": file_path, 
         "wav_path": wav_path, 
         "date": date, 
-        "speakers": speakers
+        "speakers": speakers,
+        "lable": lable
     }
 
     media_col.insert_one(data)
