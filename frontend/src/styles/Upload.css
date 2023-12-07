@@ -42,8 +42,14 @@
 }
 .btn-container{
 position: relative;
-width: 30%;
+width: 32%;
 }
+
+#labelUl{
+  padding: 0;
+  word-break: break-word;
+}
+
 
 .speaker-container{
 float: left;
@@ -119,6 +125,7 @@ background-color: #0056b3;
 .delete-media-button,
 .delete-analysis-button,
 .patch-analysis-button {
+  margin-left: 10px;
   padding: 10px 20px;
   color: white;
   border-radius: 4px;
@@ -161,5 +168,24 @@ background-color: #0056b3;
 .upload-page-buttons-container {
   display: flex;
   justify-content: flex-end;
+}
+
+.InfoWindow{
+  background-color:rgb(223, 220, 253);
+  position: absolute;
+  width: 32%;
+
+}
+
+.infoContent{
+  margin-left: 10px;
+}
+
+.close-button{
+  float: right;
+}
+
+.label-container{
+  margin-bottom: 10px;
 }
 
