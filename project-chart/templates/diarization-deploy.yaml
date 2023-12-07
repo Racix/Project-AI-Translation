@@ -37,7 +37,6 @@ spec:
                 memory: 4Gi
               limits:
                 nvidia.com/gpu: 1
-                memory: 8Gi
           volumeMounts:
           - mountPath: /dev/shm
             name: dshm  
