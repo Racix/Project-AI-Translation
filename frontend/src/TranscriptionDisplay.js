@@ -7,7 +7,7 @@ import Translating from "./Translating";
 
 function TranscriptionDisplay() {
   const [testing] = useState(false); //set to true to use element 'testfile' as outprint (limited functionality)
-  const [translating, setTranslating] = useState(true); //true when waiting on a translation to be done, false otherwise
+  const [translating, setTranslating] = useState(false); //true when waiting on a translation to be done, false otherwise
   const { id } = useParams();
   const [transcriptionData, setTranscriptionData] = useState([]);
   const [originalTransData, setOriginalTransData] = useState([]);
