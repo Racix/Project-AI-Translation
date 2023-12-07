@@ -33,9 +33,11 @@ spec:
           - configMapRef:
                 name: env
           resources:
+              requests:
+                memory: 2Gi
               limits:
                 nvidia.com/gpu: 1
-                memory: 3Gi
+                memory: 4Gi
           volumeMounts:
           - mountPath: /dev/shm
             name: dshm  
