@@ -33,7 +33,9 @@ spec:
           - configMapRef:
                 name: env
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+              limits:
+                nvidia.com/gpu: 1
+                memory: 3Gi
           volumeMounts:
           - mountPath: /dev/shm
             name: dshm  
