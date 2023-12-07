@@ -60,7 +60,7 @@ async def get_all_media():
 
 
 @app.post("/media/", status_code=status.HTTP_201_CREATED)
-async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None, lable: str = ""):
+async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None, label: str = ""):
     if not is_media_file(file):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
@@ -73,12 +73,12 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
     wav_path = os.path.join(UPLOAD_DIR, wav_name)
 
     try:
-        if lable == "":
-            lable = []
+        if label == "":
+            label = []
         else:
-            lable = json.loads(lable)
+            label = json.loads(label)
     except json.JSONDecodeError:
-        lable = []
+        label = []
         print("Input is not a valid JSON string.")
 
     # Save the uploaded media locally
@@ -95,7 +95,7 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
         "wav_path": wav_path, 
         "date": date, 
         "speakers": speakers,
-        "lable": lable
+        "label": label
     }
 
     media_col.insert_one(data)

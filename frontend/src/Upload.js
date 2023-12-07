@@ -7,13 +7,13 @@ function Upload() {
   const [file, setFile] = useState(null);
   const [speakers, setSpeakers] = useState(null);
   const [fileList, setFileList] = useState([]);
-  const [lable, setLable] = useState([]);
+  const [label, setLabel] = useState([]);
   const [info, setInfo] = useState([]);
   const [fileName, setFileName] = useState("No file chosen");
   const [data, setData] = useState(null);
   const [chosenFileID, setChosenFileID] = useState(null);
   const [isDisabled, setIsDisabled] = useState(false);
-  const labelsAsString ='['+ lable.map(label => `{"${label.name}":"${label.description}"}`) + ']';//JSON.stringify(lable);
+  const labelsAsString ='['+ label.map(label => `{"${label.name}":"${label.description}"}`) + ']';//JSON.stringify(label);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -151,7 +151,7 @@ function Upload() {
     }
   };
 
-  const addLable = () => {
+  const addLabel = () => {
     const nameInput = document.querySelector('.num-speakers[placeholder="Name"]');
     const descriptionInput = document.querySelector('.num-speakers[placeholder="Description"]');
 
@@ -161,7 +161,7 @@ function Upload() {
         description: descriptionInput.value,
       };
 
-      setLable((prevLabels) => [...prevLabels, newLabel]);
+      setLabel((prevLabels) => [...prevLabels, newLabel]);
 
       nameInput.value = '';
       descriptionInput.value = '';
@@ -169,7 +169,7 @@ function Upload() {
   };
 
   const removeLabel = (indexToRemove) => {
-    setLable((prevLabels) => prevLabels.filter((_, index) => index !== indexToRemove));
+    setLabel((prevLabels) => prevLabels.filter((_, index) => index !== indexToRemove));
   };
 
   const handleClick = (fileId) => {
@@ -194,13 +194,13 @@ function Upload() {
         params.append('speakers', speakers);
       }
 
-      if (lable.length > 0) {
-        params.append('lable', labelsAsString);
+      if (label.length > 0) {
+        params.append('label', labelsAsString);
       }
 
       const url = `${baseUrl}${params.toString() ? `?${params.toString()}` : ''}`;
 
-      //const url = `http://${BASE_URL}/media/${speakers ? `?speakers=${speakers}` : ''}${lable.length > 0 ? `&lable=${labelsAsString}` : ''}`;
+      //const url = `http://${BASE_URL}/media/${speakers ? `?speakers=${speakers}` : ''}${label.length > 0 ? `&label=${labelsAsString}` : ''}`;
 
       response = await fetch(url, {
         method: 'POST',
@@ -245,8 +245,8 @@ function Upload() {
         <div className="btn-container">
           <div>
             <h3>Labels:</h3>
-            <ul id="lableUl">
-              {lable.map((label, index) => (
+            <ul id="labelUl">
+              {label.map((label, index) => (
                 <li style={imageStyle} key={index}>
                   <span style={{ fontWeight: 'bold' }}>{label.name}</span><br />
                   {label.description}
@@ -255,7 +255,7 @@ function Upload() {
               ))}
             </ul>
           </div>
-          Lable:
+          Label:
           <input
             className="num-speakers"
             placeholder="Name"
@@ -264,8 +264,8 @@ function Upload() {
             className="num-speakers"
             placeholder="Description"
           />          
-          <button onClick={addLable} className="upload-button">
-            Add Lable
+          <button onClick={addLabel} className="upload-button">
+            Add Label
           </button>
         </div>
       )}
@@ -290,7 +290,7 @@ function Upload() {
           </button>
           <div className="infoContent">
             <h3>Labels:</h3>
-            <ul id="lableUl">
+            <ul id="labelUl">
               {info.map((info, index) => (
                 <li style={imageStyle} key={index}>
                   {Object.entries(info).map(([key, value]) => (
@@ -336,7 +336,7 @@ function Upload() {
                 Analyze
               </button>
               <button
-                onClick={() => openModal(file.lable)}
+                onClick={() => openModal(file.label)}
                 className="analyze-button"
               >
                 i
