@@ -4,10 +4,8 @@ WORKDIR /transcription
 
 RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
-    apt-get install -y curl && \
+    apt-get install -y curl ffmpeg && \
     rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir --upgrade faster-whisper==0.9.0
 
 COPY ./requirements.txt /transcription/requirements.txt
 
