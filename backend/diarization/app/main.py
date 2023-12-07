@@ -35,7 +35,9 @@ async def diarize_media_file(json_data: str = Form(...), file: UploadFile = Form
         di.create_diarization(file_path, None, sp) # TODO fix later
         diarization_segments = co.parse_rttm_from_file(file_path)
         transcription['segments'] = co.align_segments_with_overlap_info(transcription['segments'], diarization_segments)
-
+    except MemoryError as e:
+        print(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Memory error.")
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Diarization error.")
     finally:

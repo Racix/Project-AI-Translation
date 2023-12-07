@@ -38,7 +38,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int =
     pretrained_vad = "models/vad_multilingual_marblenet.nemo"
     pretrained_msdd = "models/diar_msdd_telephonic.nemo"
     config.diarizer.manifest_filepath = input_manifest_path
-    # config.device = device
+    config.device = 'cuda'
     config.batch_size = 16
     config.diarizer.out_dir = ut.OUTPUT_DIR # Directory to store intermediate files and prediction outputs
     config.diarizer.speaker_embeddings.model_path = pretrained_speaker_model
@@ -51,7 +51,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int =
     config.diarizer.oracle_vad = False # ----> ORACLE VAD Sätt till false om vi inte vill ha RTTM!!!
     config.diarizer.vad.model_path = pretrained_vad
     config.diarizer.clustering.parameters.oracle_num_speakers = False if speakers is None else True #False if speakers is nonec
-    config.diarizer.clustering.parameters.embeddings_per_chunk: 30000
+    config.diarizer.clustering.parameters.embeddings_per_chunk: 30000 # Number of embeddings in each chunk for long-form audio clustering. Adjust based on GPU memory capacity. (default: 10000, approximately 40 mins of audio)
     return config
 
 
