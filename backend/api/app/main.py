@@ -284,6 +284,16 @@ async def get_translation(media_id: str, language: str):
 
     return translation_info
 
+@app.delete("/media/{media_id}/analysis/translate/{language}")
+async def delete_translation(media_id: str, language: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+    try_find_translation(media_id,language)
+    # find right field, media_id & language
+    translate_col.delete_one({"$and":[{"media_id": ObjectId(media_id)}, {"translation.language": language}]})
+
+    return {"message": "Translation(" + language + ") deleted successfully", "media_id": media_id}
 
 @app.websocket("/ws/analysis/{media_id}")
 async def analysis_websocket(websocket: WebSocket, media_id: str):
@@ -416,6 +426,16 @@ async def get_media_analysis(media_id: str):
 
     return analysis_info.get('summary', '')
 
+@app.delete("/media/{media_id}/analysis/summary")
+async def delete_media_summary(media_id: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+
+    # Find and remove the summary feild
+    analysis_col.update_one({"media_id": ObjectId(media_id)}, { "$unset": {"summary": ""}}) 
+
+    return {"message": "Summary deleted successfully", "media_id": media_id}
 
 async def do_summary(file_path: str, media_id: str):
     timeout_seconds = 300
