@@ -1,9 +1,14 @@
-from llama_index import ListIndex, SimpleDirectoryReader, ServiceContext
+from llama_index import ListIndex, SimpleDirectoryReader, ServiceContext, set_global_tokenizer
 from llama_index.llms import LlamaCPP
 from llama_index.llms.llama_utils import (
     completion_to_prompt,
 )
 import json, tempfile, os
+from transformers import AutoTokenizer
+
+set_global_tokenizer(
+    AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1").encode
+)
 
 def load_data(file_path: str):
     with open(file_path, 'r') as file:
@@ -78,4 +83,6 @@ def create_summarize(file_path: str):
     documents = load_data(file_path)
     llm = model()
     list_index = create_index(llm, documents)
-    return summarize(list_index)
+    response = summarize(list_index)
+    del llm
+    return response

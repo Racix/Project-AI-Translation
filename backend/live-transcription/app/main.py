@@ -3,6 +3,7 @@ import app.transcribe as tr
 from fastapi import FastAPI, HTTPException, status, UploadFile
 import torch
 
+
 TMP_DIR = "/tmp"
 os.makedirs(TMP_DIR, exist_ok=True)
 

@@ -4,11 +4,11 @@ from omegaconf import OmegaConf
 import json
 import wget
 import os
-
+import torch
 
 def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int = None) -> OmegaConf:
     # Configuration yaml file
-    DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file
+    DOMAIN_TYPE = domain # Can be meeting or telephonic based on domain type of the audio file, meeting 3-6 ppl, telephonic better suited for 1 on 1 conversation.
     CONFIG_FILE_NAME = f"diar_infer_{DOMAIN_TYPE}.yaml"
     CONFIG_URL = f"https://raw.githubusercontent.com/NVIDIA/NeMo/main/examples/speaker_tasks/diarization/conf/inference/{CONFIG_FILE_NAME}"
     if not os.path.exists(os.path.join(ut.CONFIG_DIR, CONFIG_FILE_NAME)):
@@ -38,20 +38,17 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int =
     pretrained_vad = "models/vad_multilingual_marblenet.nemo"
     pretrained_msdd = "models/diar_msdd_telephonic.nemo"
     config.diarizer.manifest_filepath = input_manifest_path
-    config.device = 'cuda'
+    config.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config.batch_size = 16
     config.diarizer.out_dir = ut.OUTPUT_DIR # Directory to store intermediate files and prediction outputs
     config.diarizer.speaker_embeddings.model_path = pretrained_speaker_model
     config.diarizer.msdd_model.model_path = pretrained_msdd  
     config.diarizer.msdd_model.parameters.sigmoid_threshold = [0.7,1] 
     config.diarizer.msdd_model.parameters.diar_window = 50
-    config.diarizer.speaker_embeddings.parameters.window_length_in_sec = [1.5,1.25,1.0,0.75,0.5]
-    config.diarizer.speaker_embeddings.parameters.shift_length_in_sec = [0.75,0.625,0.5,0.375,0.1]
-    config.diarizer.speaker_embeddings.parameters.multiscale_weights= [1,1,1,1,1]
     config.diarizer.oracle_vad = False # ----> ORACLE VAD Sätt till false om vi inte vill ha RTTM!!!
     config.diarizer.vad.model_path = pretrained_vad
     config.diarizer.clustering.parameters.oracle_num_speakers = False if speakers is None else True #False if speakers is nonec
-    config.diarizer.clustering.parameters.embeddings_per_chunk: 30000 # Number of embeddings in each chunk for long-form audio clustering. Adjust based on GPU memory capacity. (default: 10000, approximately 40 mins of audio)
+    config.diarizer.clustering.parameters.embeddings_per_chunk: 150000 # Number of embeddings in each chunk for long-form audio clustering. Adjust based on GPU memory capacity. (default: 10000, approximately 40 mins of audio)
     return config
 
 
@@ -68,6 +65,15 @@ def msdd_diarization(config: OmegaConf):
 
 
 def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
-    config = configurations(file_path, "telephonic", rttm, speakers)
+    domain = ""
+    if speakers is not None:
+        if speakers > 2:
+            domain = "meeting"
+        else:
+            domain = "telephonic"
+    else:
+        domain = "meeting"
+
+    config = configurations(file_path, domain, rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)

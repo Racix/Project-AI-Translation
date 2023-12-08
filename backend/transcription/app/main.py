@@ -2,6 +2,7 @@ import os
 import app.transcribe as tr
 from fastapi import FastAPI, HTTPException, status, UploadFile
 import torch
+import gc
 
 TMP_DIR = "/tmp"
 os.makedirs(TMP_DIR, exist_ok=True)
@@ -26,5 +27,6 @@ async def transcribe_media_file(file: UploadFile):
         os.remove(file_path)
         # Clear cache
         torch.cuda.empty_cache()
-
+        # Garbage collection
+        gc.collect()
     return {"transcription": res}

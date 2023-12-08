@@ -6,6 +6,7 @@ import tempfile
 import traceback
 import sys
 import torch
+import gc 
 
 app = FastAPI()
 TMP_DIR = "/tmp"
@@ -23,10 +24,12 @@ async def transcribe_media_file(json_data: str = Form(...)):
     try:
         res = sm.create_summarize(tmp_file_path)
     except Exception as e:
-        # empty cache
-        torch.cuda.empty_cache()
+        # error logs
         print(f"An error occurred: {e}", file=sys.stderr)
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Summarization error")
-
+    finally:
+        # empty cache
+        torch.cuda.empty_cache()
+        gc.collect()
     return {"summarization": res}
