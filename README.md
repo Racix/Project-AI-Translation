@@ -4,20 +4,51 @@ Today, there is a pressing need for speech transcription and translation to incr
 
 We are a group of 8 students from Luleå University of Technology in Sweden that has developed this work during a project course on the Master Programme in Computer Science and Engineering, with specialisation Information and Communication Technology. Our work combines some more or less well-known AI tools for Transcribtion, Diarization, Translation and text summarization.
 
-**Our models used**
+## Models Used
 
-On top of our backend we have developed a frontend using React.js that uses api calls to exchange audio files and trancsription results with the backend
+- [Whisper](https://github.com/openai/whisper): Handles transcription.
+- [NeMo](https://github.com/NVIDIA/NeMo): Handles diarization.
+- [Mistral7b OpenHermes 2.5](https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF) with [LLama-index](https://github.com/run-llama/llama_index): Utilized for summarization, requires GPU
+- [Argos-translate](https://github.com/argosopentech/argos-translate): Provides translation functionality.
 
-TODO
+## Installation
 
-TODO
+### Prerequisites
 
-TODO
+- **Docker Engine**: Install Docker Desktop or another Docker version compatible with your system.
 
-TODO
+### Installation Steps
 
-some models can only run with a cuda compatible GPU, standard in this project is to run on cpu. To run with GPU, go to the backend.sh script and change **COMPOSE_FILE="compose.yaml"** into COMPOSE_FILE="compose-gpu.yaml" and make eventual necessary changes to the .yaml file to make it run with your gpu.
+#### Backend and Frontend Setup
 
-To run the start script you need to first install the docker engine. One way of doing that is by installing [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
-When you have docker engine installed, run **./start.sh** to build the backend and frontend. You can also build them seperately by going to their respective folders and run the **backend.sh** and/or the **frontend.sh** scripts.
+- Run after installing Docker Engine. This script builds both the backend and frontend without using GPU.
+    ```
+    ./start.sh
+    ```
+    to run with GPU:
+    ```
+    ./start.sh gpu
+    ```
+- Alternatively, navigate to the respective backend and frontend folders and build and deploy separetely
+    ```
+    ./backend.sh build 
+    ./backend.sh run
+    ``` 
+    with GPU:
+    ```
+    ./backend.sh gpu build 
+    ./backend.sh gpu run
+    ``` 
+
+
+    ```
+    ./frontend.sh build
+    ./frontend.sh run
+    ``` 
+
+- Running with Kubernetes and Helm
+ Use the build scripts from above to create the images, helm to deploy.
+
+
+ - Running live-transcription: 
