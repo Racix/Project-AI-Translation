@@ -325,8 +325,8 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
     max_state_len = 35
     min_state_len = 25
-    max_len_sent = 10
-    min_len_sent = 4
+    max_len_sent = 20
+    min_len_sent = 2
 
     if live_id not in LIVE_RECORDING_STATE:
         LIVE_RECORDING_STATE[live_id] = [0, [], []] # [total_time, state, old_segments]
