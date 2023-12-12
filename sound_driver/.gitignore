@@ -2,6 +2,7 @@
 .env
 /dist
 /build
+/recording
 *.spec
 
 __pycache__/
