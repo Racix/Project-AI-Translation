@@ -323,9 +323,9 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #Set a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
-    max_state_len = 55
-    min_state_len = 45
-    max_len_sent = 20
+    max_state_len = 15
+    min_state_len = 10
+    max_len_sent = 10
     min_len_sent = 2
 
     if live_id not in LIVE_RECORDING_STATE:
