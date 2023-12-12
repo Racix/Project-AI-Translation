@@ -1,4 +1,10 @@
 # Weekly blog
+
+## Tuesday - 2023-12-12
+We are entering our final phase of our development and adding our finishing touches. Most parts are now up and running on the Google Kubernetes enginge.
+
+Our final demo will be presented live on zoom in exactly a week from when this was written! For more info see the webpage for [Luleå University of Technology](https://www.ltu.se/org/srt/Redovisning-av-projektkurs-fagelskadning-P-skivor-och-AI-1.234385?l=en)
+
 ## Friday - 2023-12-01
 Weekly update, we are now able to deploy everything to Google Kubernetes Engine using their compute power, have not yet deployed live transcription and translation service to the cluster, the other serivces are deployed and mostly working with some minor bugs. As for the other services we are making progress in alot of areas and we got some pull requests that are in review and that should be merged soon.
 
