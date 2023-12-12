@@ -1,7 +1,7 @@
 from faster_whisper import WhisperModel
 import time
 
-model_size = "base"
+model_size = "medium"
 model = WhisperModel(model_size, device ="cuda", compute_type="float32")
 
 def transcribe(file_path: str) -> dict:

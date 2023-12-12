@@ -72,7 +72,7 @@ def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
         else:
             domain = "telephonic"
     else:
-        domain = "meeting"
+        domain = "telephonic"
 
     config = configurations(file_path, domain, rttm, speakers)
     #cluster_diarization(config)

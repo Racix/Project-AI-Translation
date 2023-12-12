@@ -37,3 +37,5 @@ def transcribe(file_path: str) -> dict:
         return result_dict
     except Exception as e:
         print(traceback.format_exc())
+    finally:
+        del whisper_pipeline

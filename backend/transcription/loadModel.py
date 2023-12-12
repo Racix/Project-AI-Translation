@@ -10,3 +10,6 @@ whisper_pipeline = pipeline(
     chunk_length_s=30,
     device=device,        
 )
+
+del whisper_pipeline
+torch.cuda.empty_cache()
