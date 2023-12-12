@@ -2,6 +2,11 @@
 
 COMPOSE_FILE="compose.yaml"
 
+if [[ "$1" == "gpu" ]]; then
+    COMPOSE_FILE="compose-gpu.yaml"
+    shift
+fi
+
 build_services() {
     if [ $# -eq 0 ]; then
         echo "Building all docker services"
@@ -11,13 +16,13 @@ build_services() {
 
     for service in "$@"; do
         echo "Building Docker service: $service"
-        docker-compose -f $COMPOSE_FILE build $service
+        docker-compose -f $COMPOSE_FILE build "$service"
     done
 }
 
 run_services() {
     echo "Running Docker services..."
-    docker-compose -f $COMPOSE_FILE --compatibility up -d 
+    docker-compose -f $COMPOSE_FILE --compatibility up -d
 }
 
 case "$1" in
@@ -29,7 +34,7 @@ case "$1" in
         run_services
         ;;
     *)
-        echo "Usage: $0 {build|run}"
+        echo "Usage: $0 {gpu} build|run"
         exit 1
         ;;
 esac
