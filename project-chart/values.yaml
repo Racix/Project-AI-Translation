@@ -54,7 +54,7 @@ summarization:
 
 live_transcription:
   repository: tonytonfisk/livetranscription
-  tag: "medium32"
+  tag: "medium"
   pullPolicy: Always
   name: livetranscript
   port: 8085
