@@ -18,7 +18,7 @@ def transcribe(file_path: str) -> dict:
         )
         print(f"Transcription of {file_path} started...")               
         # Transcribe the video to the original language
-        transcription = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, generate_kwargs={"task": "transcribe"})        
+        transcription = whisper_pipeline(file_path, return_timestamps=True, batch_size = 4, chunk_length_s=30, generate_kwargs={"task": "transcribe"})        
         chunks = transcription['chunks']
         transcription_data = []        
         transcribed_text = ' '.join([chunk['text'] for chunk in chunks])

@@ -6,7 +6,7 @@ replicaCount: 1
 
 frontend:
   repository: tonytonfisk/frontend
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: frontend
   port: 80
@@ -31,7 +31,7 @@ database:
 
 transcription:
   repository: tonytonfisk/transcription
-  tag: "latest-largev2"
+  tag: "largev2-batchsize4"
   pullPolicy: Always
   name: "transcription"
   port: 8081
