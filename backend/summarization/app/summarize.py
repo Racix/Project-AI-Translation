@@ -50,8 +50,20 @@ def messages_to_prompt(messages):
   prompt = prompt + "<|im_start|>assistant\n"
 
   return prompt
+    
+def create_index(llm, documents):
+    service_context = ServiceContext.from_defaults(llm=llm, embed_model="local:BAAI/bge-base-en-v1.5", context_window = 3700)
+    list_index = ListIndex.from_documents(documents, service_context=service_context)
+    return list_index
+    
+def summarize(list_index):
+    query_engine = list_index.as_query_engine(response_mode="tree_summarize")
+    response = query_engine.query("Can you summarize the text for me?")
+    return response
 
-def model():
+def create_summarize(file_path: str):
+    documents = load_data(file_path)
+
     llm = LlamaCPP(
     # optionally, you can set the path to a pre-downloaded model instead of model_url
     model_path="models/mistral7b",
@@ -69,21 +81,6 @@ def model():
     completion_to_prompt=completion_to_prompt,
     verbose=True,
 )
-    return llm
-    
-def create_index(llm, documents):
-    service_context = ServiceContext.from_defaults(llm=llm, embed_model="local:BAAI/bge-base-en-v1.5", context_window = 3700)
-    list_index = ListIndex.from_documents(documents, service_context=service_context)
-    return list_index
-    
-def summarize(list_index):
-    query_engine = list_index.as_query_engine(response_mode="tree_summarize")
-    response = query_engine.query("Can you summarize the text for me?")
-    return response
-
-def create_summarize(file_path: str):
-    documents = load_data(file_path)
-    llm = model()
     list_index = create_index(llm, documents)
     response = summarize(list_index)
     del llm
