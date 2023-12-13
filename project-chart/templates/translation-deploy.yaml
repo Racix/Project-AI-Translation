@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.translation.name }}
+  labels:
+    name: {{ .Values.translation.name }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      name: {{ .Values.translation.name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.translation.name }}
+    spec:
+      containers:
+        - name: {{ .Values.translation.name }}
+          image: "{{ .Values.translation.repository }}:{{ .Values.translation.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.translation.pullPolicy }}
+          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.api.port_guest }}"]
+          ports:
+            - name: translation
+              containerPort: {{ .Values.translation.port }}
+              protocol: TCP
+          envFrom:
+          - configMapRef:
+                name: env
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

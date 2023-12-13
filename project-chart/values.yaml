@@ -43,7 +43,12 @@ diarization:
   name: diarization
   port: 8082
 
-#translation:
+translation:
+  repository: tonytonfisk/translation
+  tag: "latest"
+  pullPolicy: Always
+  name: translation
+  port: 8083
 
 summarization:
   repository: tonytonfisk/summarization
