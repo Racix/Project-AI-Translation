@@ -255,7 +255,7 @@ async def translate_analysis(media_id: str, to_language: str) -> dict:
             json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
             json_analysis['_id'] = str(json_analysis['_id'])
             json_analysis['media_id'] = str(json_analysis['media_id'])
-            detected_language = json_analysis["diarization"]["Detected language"]
+            detected_language = json_analysis["diarization"]["detected_language"]
             async with session.post(translate_url, json=json_analysis, params={"from_language": detected_language, "to_language": to_language}) as response:
                 if response.status == status.HTTP_201_CREATED:
                     translation = await response.json()

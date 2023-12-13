@@ -9,6 +9,8 @@ from transformers import AutoTokenizer
 set_global_tokenizer(
     AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1").encode
 )
+import torch
+import gc
 
 def load_data(file_path: str):
     with open(file_path, 'r') as file:
