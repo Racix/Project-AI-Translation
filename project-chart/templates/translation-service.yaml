@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.transcription.name }}
+  name: {{ .Values.translation.name }}
   labels:
-    name: {{ .Values.transcription.name }}
+    name: {{ .Values.translation.name }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.api.port_guest}}
       targetPort: {{ .Values.api.port_guest }}
-      name: transcription
+      name: translation
   selector:
-    name: {{ .Values.transcription.name }}
+    name: {{ .Values.translation.name }}
