@@ -100,7 +100,7 @@ function TranscriptionDisplay() {
           const summary = data.summary;
           setSummaryData(summary);
           setOriginalTransData(segments);
-          setOriginalLanguage(data.diarization["Detected language"]);
+          setOriginalLanguage(data.diarization["detected_language"]);
         }
       } 
     } catch (error) {

@@ -16,7 +16,7 @@ service:
 
 api:
   repository: tonytonfisk/api
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: api
   port: 8080
@@ -38,7 +38,7 @@ transcription:
 
 diarization:
   repository: tonytonfisk/diarization
-  tag: "latestcuda"
+  tag: "latest"
   pullPolicy: Always
   name: diarization
   port: 8082
@@ -52,7 +52,7 @@ translation:
 
 summarization:
   repository: tonytonfisk/summarization
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: summarization
   port: 8084

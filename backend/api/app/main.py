@@ -18,8 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 from starlette.responses import FileResponse
 from websockets.exceptions import ConnectionClosedOK
+from typing import List, Dict
 
 app = FastAPI()
+
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,7 +60,7 @@ async def get_all_media():
 
 
 @app.post("/media/", status_code=status.HTTP_201_CREATED)
-async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None):
+async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, speakers: int = None, label: str = ""):
     if not is_media_file(file):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported file format.")
 
@@ -68,6 +71,15 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
     wav_name = os.path.splitext(os.path.basename(storage_name))[0] + ".mono.wav"
     file_path = os.path.join(UPLOAD_DIR, storage_name)
     wav_path = os.path.join(UPLOAD_DIR, wav_name)
+
+    try:
+        if label == "":
+            label = []
+        else:
+            label = json.loads(label)
+    except json.JSONDecodeError:
+        label = []
+        print("Input is not a valid JSON string.")
 
     # Save the uploaded media locally
     with open(file_path, "wb") as media_file:
@@ -82,7 +94,8 @@ async def upload_media(file: UploadFile, background_tasks: BackgroundTasks, spea
         "file_path": file_path, 
         "wav_path": wav_path, 
         "date": date, 
-        "speakers": speakers
+        "speakers": speakers,
+        "label": label
     }
 
     media_col.insert_one(data)
@@ -129,7 +142,7 @@ async def start_media_analysis(media_id: str, background_tasks: BackgroundTasks)
 
 
 async def analyze(file_path: str, wav_path: str, media_id: str, speakers: int = None):
-    timeout_seconds = 1800 #TODO Find a good timeout
+    timeout_seconds = 600 #TODO Find a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe"
     diarize_url = f"http://{os.environ['DIARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/diarize"
@@ -255,7 +268,7 @@ async def translate_analysis(media_id: str, to_language: str) -> dict:
             json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
             json_analysis['_id'] = str(json_analysis['_id'])
             json_analysis['media_id'] = str(json_analysis['media_id'])
-            detected_language = json_analysis["diarization"]["detected_language"]
+            detected_language = json_analysis["diarization"]["Detected language"]
             async with session.post(translate_url, json=json_analysis, params={"from_language": detected_language, "to_language": to_language}) as response:
                 if response.status == status.HTTP_201_CREATED:
                     translation = await response.json()
@@ -284,6 +297,16 @@ async def get_translation(media_id: str, language: str):
 
     return translation_info
 
+@app.delete("/media/{media_id}/analysis/translate/{language}")
+async def delete_translation(media_id: str, language: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+    try_find_translation(media_id,language)
+    # find right field, media_id & language
+    translate_col.delete_one({"$and":[{"media_id": ObjectId(media_id)}, {"translation.language": language}]})
+
+    return {"message": "Translation(" + language + ") deleted successfully", "media_id": media_id}
 
 @app.websocket("/ws/analysis/{media_id}")
 async def analysis_websocket(websocket: WebSocket, media_id: str):
@@ -324,9 +347,9 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
     max_state_len = 35
-    min_state_len = 30
-    max_len_sent = 20
-    min_len_sent = 2
+    min_state_len = 25
+    max_len_sent = 10
+    min_len_sent = 4
 
     if live_id not in LIVE_RECORDING_STATE:
         LIVE_RECORDING_STATE[live_id] = [0, [], []] # [total_time, state, old_segments]
@@ -416,6 +439,16 @@ async def get_media_analysis(media_id: str):
 
     return analysis_info.get('summary', '')
 
+@app.delete("/media/{media_id}/analysis/summary")
+async def delete_media_summary(media_id: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+
+    # Find and remove the summary feild
+    analysis_col.update_one({"media_id": ObjectId(media_id)}, { "$unset": {"summary": ""}}) 
+
+    return {"message": "Summary deleted successfully", "media_id": media_id}
 
 async def do_summary(file_path: str, media_id: str):
     timeout_seconds = 300

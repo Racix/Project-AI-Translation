@@ -51,13 +51,6 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int =
     config.diarizer.clustering.parameters.embeddings_per_chunk: 150000 # Number of embeddings in each chunk for long-form audio clustering. Adjust based on GPU memory capacity. (default: 10000, approximately 40 mins of audio)
     return config
 
-
-def msdd_diarization(config: OmegaConf):
-    #Multi-scale model
-    oracle_vad_msdd_model = NeuralDiarizer(cfg=config).to(config.device)
-    oracle_vad_msdd_model.diarize()
-
-
 # def cluster_diarization(config: OmegaConf):
 #     #Clustering model
 #     oracle_vad_clusdiar_model = ClusteringDiarizer(cfg=config)
@@ -65,15 +58,22 @@ def msdd_diarization(config: OmegaConf):
 
 
 def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
-    domain = ""
-    if speakers is not None:
-        if speakers > 2:
-            domain = "meeting"
+    try:
+        domain = ""
+        if speakers is not None:
+            if speakers > 2:
+                domain = "meeting"
+            else:
+                domain = "telephonic"
         else:
             domain = "telephonic"
-    else:
-        domain = "telephonic"
 
-    config = configurations(file_path, domain, rttm, speakers)
-    #cluster_diarization(config)
-    msdd_diarization(config)
+        config = configurations(file_path, domain, rttm, speakers)
+        #cluster_diarization(config)
+        oracle_vad_msdd_model = NeuralDiarizer(cfg=config).to(config.device)
+        oracle_vad_msdd_model.diarize()
+    except Exception as e:
+        print(e)
+    finally:
+        del oracle_vad_msdd_model
+        torch.cuda.empty_cache()
