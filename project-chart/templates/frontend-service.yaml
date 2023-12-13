@@ -6,6 +6,7 @@ metadata:
     name: {{ .Values.frontend.name}}
 spec:
   type: LoadBalancer
+  loadBalancerIP: 34.116.205.245
   ports:
     - port: {{ .Values.frontend.port }}
       targetPort: {{ .Values.frontend.port }}

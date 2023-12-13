@@ -6,6 +6,7 @@ metadata:
     name: {{ .Values.api.name }}
 spec:
   type: LoadBalancer
+  loadBalancerIP: 34.118.114.181
   ports:
     - port: {{ .Values.api.port }}
       targetPort: {{ .Values.api.port_guest }}
