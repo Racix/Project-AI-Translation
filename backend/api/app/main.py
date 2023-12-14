@@ -217,7 +217,7 @@ async def analyze(file_path: str, wav_path: str, media_id: str, speakers: int = 
 
 
 @app.get("/media/{media_id}/analysis")
-async def get_summary(media_id: str):
+async def get_media_analysis(media_id: str):
     # Check if media and analysis exists
     try_find_media(media_id)
     analysis_info = try_find_analysis(media_id)
