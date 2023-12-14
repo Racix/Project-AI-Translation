@@ -82,5 +82,8 @@ def create_summarize(file_path: str):
     finally:
         del llm
         del service_context
+        del list_index
+        del query_engine
+        del response
         torch.cuda.empty_cache()  
         gc.collect()
