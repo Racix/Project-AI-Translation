@@ -10,6 +10,7 @@ set_global_tokenizer(
     AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1").encode
 )
 import torch
+import gc
 
 def load_data(file_path: str):
     with open(file_path, 'r') as file:
@@ -79,7 +80,7 @@ def create_summarize(file_path: str):
     except Exception as e:
        print(e)
     finally:
-        llm.to('cpu')
         del llm
         del service_context
         torch.cuda.empty_cache()  
+        gc.collect()
