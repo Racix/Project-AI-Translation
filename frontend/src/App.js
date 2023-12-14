@@ -55,7 +55,7 @@ function App() {
 
               <br></br>
               <br></br>
-              To start live transcription, one in the call must run the recorder on their own mahcine. To do this, navigate to the sound_driver directory and run the sound_driver.exe file. When this is done connect to the channel in the Live transcription page here on the website and conncet to the channel.
+              To start live transcription, one in the call must run the recorder on their own mahcine. To do this, navigate to the sound_driver directory and run the sound_driver.exe file. When this is done connect to the channel in the Live transcription page here on the website and connect to the channel.
               <br></br>
               <br></br>
               <a href='https://github.com/Racix/Project-AI-Translation/tree/main'> Read more in the github repository</a>
