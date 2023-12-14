@@ -16,7 +16,7 @@ service:
 
 api:
   repository: tonytonfisk/api
-  tag: "latest2"
+  tag: "latest"
   pullPolicy: Always
   name: api
   port: 8080
