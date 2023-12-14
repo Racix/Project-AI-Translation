@@ -12,8 +12,9 @@ app = FastAPI()
 
 @app.post("/transcribe", status_code=status.HTTP_201_CREATED)
 async def transcribe_media_file(file: UploadFile):
+    print(f"Transcription of {file_path} started...")
     file_path = os.path.join(TMP_DIR, file.filename)
-
+   
     # Temporary save the uploaded media locally
     with open(file_path, "wb") as media_file:
         media_file.write(file.file.read())

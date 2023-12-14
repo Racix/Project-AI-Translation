@@ -11,6 +11,7 @@ set_global_tokenizer(
 )
 import torch
 import gc
+import llama_cpp
 
 def load_data(file_path: str):
     with open(file_path, 'r') as file:
@@ -66,7 +67,7 @@ def create_summarize(file_path: str):
         generate_kwargs={},
         # kwargs to pass to __init__()
         # set to at least 1 to use GPU
-        model_kwargs={"n_gpu_layers": 18}, #MAX 35 layers can be offloaded to GPU if using mistral 7b
+        model_kwargs={"n_gpu_layers": -1}, #MAX 35 layers can be offloaded to GPU if using mistral 7b
         # transform inputs into Llama2 format
         messages_to_prompt=messages_to_prompt,
         completion_to_prompt=completion_to_prompt,
@@ -76,11 +77,12 @@ def create_summarize(file_path: str):
         list_index = ListIndex.from_documents(documents, service_context=service_context)
 
         query_engine = list_index.as_query_engine(response_mode="tree_summarize")
-        response = query_engine.query("Can you summarize the text for me?")
+        response = query_engine.query("Summarize in detail.")
         return response
     except Exception as e:
        print(e)
     finally:
+        llama_cpp.llama_free_model(llm)
         del llm
         del service_context
         del list_index

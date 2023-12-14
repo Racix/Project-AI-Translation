@@ -12,5 +12,6 @@ whisper_pipeline = pipeline(
     device=device,        
 )
 
+del whisper_pipeline
 torch.cuda.empty_cache()
 gc.collect()
