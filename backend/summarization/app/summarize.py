@@ -50,6 +50,7 @@ def messages_to_prompt(messages):
   prompt = prompt + "<|im_start|>assistant\n"
 
   return prompt
+  
 
 def create_summarize(file_path: str):
     try:
@@ -65,7 +66,7 @@ def create_summarize(file_path: str):
         generate_kwargs={},
         # kwargs to pass to __init__()
         # set to at least 1 to use GPU
-        model_kwargs={"n_gpu_layers": -1},
+        model_kwargs={"n_gpu_layers": 18}, #MAX 35 layers can be offloaded to GPU if using mistral 7b
         # transform inputs into Llama2 format
         messages_to_prompt=messages_to_prompt,
         completion_to_prompt=completion_to_prompt,
@@ -87,3 +88,4 @@ def create_summarize(file_path: str):
         del response
         torch.cuda.empty_cache()  
         gc.collect()
+        # cache still won't clear for some reason ^^
