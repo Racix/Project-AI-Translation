@@ -124,3 +124,53 @@ p {
 .file-list li:hover {
   background-color: #f5f5f5;
 }
+
+
+.textField {
+  margin-bottom: 15px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+pre {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+strong {
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.head-line{
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.app-body{
+  font-size: 20px;
+}
+
+.dorisField{
+  margin-left: 29%;
+  font-size: 22px;
+  margin-bottom: 15px;
+}
