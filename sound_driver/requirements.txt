@@ -1,0 +1,7 @@
+asyncio
+pyaudiowpatch
+librosa
+numpy
+webrtcvad
+pyperclip
+websockets

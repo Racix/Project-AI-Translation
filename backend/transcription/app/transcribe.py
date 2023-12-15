@@ -1,4 +1,3 @@
-from transformers import pipeline
 from langdetect import detect
 import time 
 import traceback
@@ -8,6 +7,7 @@ from loadModel import whisper_pipeline
 def transcribe(file_path: str) -> dict:
     try:         
         print(f"Transcription of {file_path} started...")               
+        start_time = time.time()
         # Transcribe the video to the original language
         transcription = whisper_pipeline(file_path, return_timestamps=True, chunk_length_s=30, batch_size=32, generate_kwargs={"task": "transcribe"})        
         chunks = transcription['chunks']
@@ -26,7 +26,6 @@ def transcribe(file_path: str) -> dict:
                     'text': text,
                     'start': start_timestamp,
                     'duration': duration,
-                    'Speaker': "Speaker0"
                 }
                 transcription_data.append(sentence)      
             
@@ -34,6 +33,7 @@ def transcribe(file_path: str) -> dict:
             "detected_language": detected_language,
             "segments": transcription_data,            
         }
+        print(f"Transcription of {file_path} finished. Total time: {str(time.time() - start_time)}")
         return result_dict
     except Exception as e:
         print(traceback.format_exc())

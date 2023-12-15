@@ -1,55 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import "./styles/TranscriptionDisplay.css";
 
 const LiveTranscription = () => {
   const [roomId, setRoomId] = useState('');
-  const [socket, setSocket] = useState(null);
   const [transcriptionData, setTranscriptionData] = useState([]);
+  const scrollRef = useRef(null);
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
   const connectToWebSocket = () => {
-    const newSocket = new WebSocket(`ws://${BASE_URL}/ws/live-transcription/${roomId}`);
-    setSocket(newSocket);
+    const socket = new WebSocket(`ws://${BASE_URL}/ws/live-transcription/${roomId}`);
 
-    newSocket.onopen = () => {
+    socket.onopen = () => {
+      setTranscriptionData([]);
+      alert("Connected to room")
       console.log('WebSocket connected');
     };
 
-    newSocket.onclose = () => {
+    socket.onclose = () => {
       console.log('WebSocket disconnected');
     };
 
-    newSocket.onmessage = (event) => {
+    socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log('WebSocket message received:', data);
       handleTranscriptionData(data);
     };
   };
 
-  const sendMessage = (message) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(message);
-    }
-  };
-
   const handleTranscriptionData = (newData) => {
     if(newData === null){
-      console.error("recieved null")
+      console.error("Recieved null on new transcription data from server")
       return;
     }
+
     setTranscriptionData(prevData => {
       const data = [...prevData]; // Create a copy of the previous data
-      let lastIndex = data.length - 1;
-      const startOfNewData = newData.transcription.segments[0].start;
+      let newSegments = newData.transcription.segments;
 
-      while (lastIndex >= 0 && data[lastIndex].start >= startOfNewData) {
-
-        data.pop();
-        lastIndex = data.length - 1;
+      if (newSegments.length > 0) {
+        let lastIndex = data.length - 1;
+        const startOfNewData = newSegments[0].start;
+        // Remove old data until starttime lines up
+        while (lastIndex >= 0 && data[lastIndex].start >= startOfNewData) {
+          data.pop();
+          lastIndex--;
+        }
+        // Fallback to remove from new data if it still overlapps (to try and remove repeting scentences)
+        while (lastIndex >= 0 && newSegments.length > 0 && data[lastIndex].start + data[lastIndex].duration > newSegments[0].start) {
+          console.log("need shift data. old start ",  data[lastIndex].start, " old start + dur ",  data[lastIndex].start + data[lastIndex].duration, " new start ", newSegments[0].start)
+          newSegments.shift();
+        }
       }
 
-      return data.concat(newData.transcription.segments);
+      return data.concat(newSegments);
     });
   }
 
@@ -58,6 +62,12 @@ const LiveTranscription = () => {
     transcriptionData.map((item, index) => (
       newTransData = newTransData.concat(item.text)
     ))
+    
+    //scroll the window down
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+
     return newTransData;
   }
 
@@ -66,16 +76,18 @@ const LiveTranscription = () => {
       <div className="upload-container">
         <div className="file-input-container">
           <input
+              className="label-input"
               type="text"
               placeholder="Enter Room ID"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
           />
-          <button className='blue-button' onClick={connectToWebSocket}>Connect to WebSocket</button>
+          <button className='blue-button' onClick={connectToWebSocket}>Connect to Room id</button>
         </div>
-        <div className="transcription-item">
-          <p className="transcription-text">
-            <span>{dataArrayToString(transcriptionData)}</span>
+        <div ref={scrollRef} className="transcription-item" style={{width: "80%", maxHeight: "150px", overflow: "hidden", overflowY: "scroll", backgroundColor: "white"}}>
+          <p className="transcription-text" style={{margin: "0"}}>
+            <span>{
+            dataArrayToString(transcriptionData)}</span>
           </p>
         </div>
       </div>

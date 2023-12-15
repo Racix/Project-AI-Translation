@@ -2,7 +2,7 @@
     "message": {
       "summary":"",
       "diarization": {
-        "Detected language": "",
+        "detected_language": "",
         "Language probability": 0,
         "segments": [
           {
