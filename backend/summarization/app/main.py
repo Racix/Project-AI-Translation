@@ -23,6 +23,7 @@ async def transcribe_media_file(json_data: str = Form(...)):
         tmp_file_path = tmp_file.name
     try:
         res = sm.create_summarize(tmp_file_path)
+        print(res, "main")
     except Exception as e:
         # error logs
         print(f"An error occurred: {e}", file=sys.stderr)

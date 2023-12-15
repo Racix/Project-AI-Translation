@@ -87,7 +87,8 @@ def create_summarize(file_path: str):
         print(response)
         text_response = str(response)
         print(text_response)
-        return post_processing(text_response)
+        result = post_processing(text_response)
+        return result
     except Exception as e:
        print(e)
     finally:
@@ -95,7 +96,6 @@ def create_summarize(file_path: str):
         del service_context
         del list_index
         del query_engine
-        del response
         torch.cuda.empty_cache()  
         gc.collect()
         # cache still won't clear for some reason ^^
