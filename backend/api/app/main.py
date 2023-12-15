@@ -248,6 +248,14 @@ async def delete_media_analysis(media_id: str):
     return {"message": "Analysis deleted successfully", "media_id": media_id}
 
 
+@app.get("/media/{media_id}/analysis/translate/{language}")
+async def get_translation(media_id: str, language: str):
+    try_find_media(media_id)
+    translation_info = try_find_translation(media_id, language)
+
+    return translation_info
+
+
 @app.post("/media/{media_id}/analysis/translate/{language}", status_code=status.HTTP_201_CREATED)
 async def start_translation(media_id: str, language: str,):
     # Check if media exists
@@ -259,7 +267,7 @@ async def start_translation(media_id: str, language: str,):
 
 
 async def translate_analysis(media_id: str, to_language: str) -> dict:
-    timeout_seconds = 300
+    timeout_seconds = 600
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     translate_url = f"http://{os.environ['TRANSLATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/translate"
     translation = {}
@@ -268,7 +276,7 @@ async def translate_analysis(media_id: str, to_language: str) -> dict:
             json_analysis = analysis_col.find_one({"media_id": ObjectId(media_id)})
             json_analysis['_id'] = str(json_analysis['_id'])
             json_analysis['media_id'] = str(json_analysis['media_id'])
-            detected_language = json_analysis["diarization"]["detected_languages"]
+            detected_language = json_analysis["diarization"]["detected_language"]
             async with session.post(translate_url, json=json_analysis, params={"from_language": detected_language, "to_language": to_language}) as response:
                 if response.status == status.HTTP_201_CREATED:
                     translation = await response.json()
@@ -290,13 +298,6 @@ async def translate_analysis(media_id: str, to_language: str) -> dict:
     return translation
 
 
-@app.get("/media/{media_id}/analysis/translate/{language}")
-async def get_translation(media_id: str, language: str):
-    try_find_media(media_id)
-    translation_info = try_find_translation(media_id, language)
-
-    return translation_info
-
 @app.delete("/media/{media_id}/analysis/translate/{language}")
 async def delete_translation(media_id: str, language: str):
     # Check if media and analysis exists
@@ -307,6 +308,80 @@ async def delete_translation(media_id: str, language: str):
     translate_col.delete_one({"$and":[{"media_id": ObjectId(media_id)}, {"translation.language": language}]})
 
     return {"message": "Translation(" + language + ") deleted successfully", "media_id": media_id}
+
+
+@app.get("/media/{media_id}/analysis/summary")
+async def get_media_summary(media_id: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    analysis_info = try_find_analysis(media_id)
+
+    return analysis_info.get('summary', '')
+
+
+@app.post("/media/{media_id}/analysis/summary")
+async def start_media_summary(media_id: str, background_tasks: BackgroundTasks):
+    # Check if media and analysis exists
+    media_info = try_find_media(media_id)
+
+    # Start analysis in the background
+    background_tasks.add_task(do_summary, media_info['file_path'], media_id)
+    return {"message": "Media file summary started"}
+
+
+async def do_summary(file_path: str, media_id: str):
+    timeout_seconds = 600
+    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+    summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
+    summarize = {}
+    try_find_media(media_id)
+    analysis_info = try_find_analysis(media_id)
+
+    try:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
+            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
+            with open(file_path, 'rb') as file:
+                form_new = aiohttp.FormData()
+                form_new.add_field('json_data', json.dumps(analysis_info), content_type='application/json')
+                form_new.add_field('file', file)
+
+                async with aiohttp.request('POST', summarize_url, data=form_new) as response:
+                    if response.status == status.HTTP_201_CREATED:
+                        summarize = await response.json()
+                        status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
+                    else:
+                        status_data = {"status": response.status, "message": "Summarization error."}
+                        return
+    except TimeoutError as e:
+        print("TimeoutError while summarizing:", e)
+        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Summarization timed out."}
+        return
+    except Exception as e:
+        print("Unknown error while summarizing:", e)
+        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Summarization error."}
+        return
+    finally:
+        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
+    analysis_info['summary'] = summarize.get('summarization', {}).get('response', '')
+    analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
+    status_data = {"status": status.HTTP_201_CREATED, "message": "Summarization done."}
+    asyncio.create_task(analysisManager.broadcast(status_data, media_id))
+
+
+@app.delete("/media/{media_id}/analysis/summary")
+async def delete_media_summary(media_id: str):
+    # Check if media and analysis exists
+    try_find_media(media_id)
+    try_find_analysis(media_id)
+
+    # Find and remove the summary feild
+    analysis_col.update_one({"media_id": ObjectId(media_id)}, { "$unset": {"summary": ""}}) 
+
+    return {"message": "Summary deleted successfully", "media_id": media_id}
+
 
 @app.websocket("/ws/analysis/{media_id}")
 async def analysis_websocket(websocket: WebSocket, media_id: str):
@@ -346,10 +421,10 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
     timeout_seconds = 30 #Set a good timeout
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     transcribe_url = f"http://{os.environ['LIVE_TRANSCRIPTION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/transcribe-live"
-    max_state_len = 35
-    min_state_len = 25
-    max_len_sent = 10
-    min_len_sent = 4
+    max_state_len = 40
+    min_state_len = 30
+    max_len_sent = 20
+    min_len_sent = 2
 
     if live_id not in LIVE_RECORDING_STATE:
         LIVE_RECORDING_STATE[live_id] = [0, [], []] # [total_time, state, old_segments]
@@ -405,8 +480,7 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
                 transcription['transcription']['segments'] = new_segments
                 old_segments = new_segments
             
-            print("transcription:", transcription)
-            if transcription is not None:
+                print("transcription:", transcription)
                 await liveTransciptionManager.broadcast(transcription, live_id)
 
     except (WebSocketDisconnect, ConnectionClosedOK) as e:
@@ -419,77 +493,6 @@ async def live_transcription_websocket(websocket: WebSocket, live_id: str):
         if len(liveTransciptionManager.connections[live_id]) <= 0:
             del LIVE_RECORDING_STATE[live_id]
         print(f"Client {websocket.client} disconnected")
-
-
-@app.post("/media/{media_id}/analysis/summary")
-async def get_media_summary(media_id: str, background_tasks: BackgroundTasks):
-    # Check if media and analysis exists
-    media_info = try_find_media(media_id)
-
-    # Start analysis in the background
-    background_tasks.add_task(do_summary, media_info['file_path'], media_id)
-    return {"message": "Media file summary started"}
-
-
-@app.get("/media/{media_id}/analysis/summary")
-async def get_media_analysis(media_id: str):
-    # Check if media and analysis exists
-    try_find_media(media_id)
-    analysis_info = try_find_analysis(media_id)
-
-    return analysis_info.get('summary', '')
-
-@app.delete("/media/{media_id}/analysis/summary")
-async def delete_media_summary(media_id: str):
-    # Check if media and analysis exists
-    try_find_media(media_id)
-    try_find_analysis(media_id)
-
-    # Find and remove the summary feild
-    analysis_col.update_one({"media_id": ObjectId(media_id)}, { "$unset": {"summary": ""}}) 
-
-    return {"message": "Summary deleted successfully", "media_id": media_id}
-
-async def do_summary(file_path: str, media_id: str):
-    timeout_seconds = 300
-    session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-    summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
-    summarize = {}
-    try_find_media(media_id)
-    analysis_info = try_find_analysis(media_id)
-
-    try:
-        async with aiohttp.ClientSession(timeout=session_timeout) as session:
-            status_data = {"status": status.HTTP_200_OK, "message": "Summarization started..."}
-            asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-
-            with open(file_path, 'rb') as file:
-                form_new = aiohttp.FormData()
-                form_new.add_field('json_data', json.dumps(analysis_info), content_type='application/json')
-                form_new.add_field('file', file)
-
-                async with aiohttp.request('POST', summarize_url, data=form_new) as response:
-                    if response.status == status.HTTP_201_CREATED:
-                        summarize = await response.json()
-                        status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
-                    else:
-                        status_data = {"status": response.status, "message": "Summarization error."}
-                        return
-    except TimeoutError as e:
-        print("TimeoutError while summarizing:", e)
-        status_data = {"status": status.HTTP_504_GATEWAY_TIMEOUT, "message": "Summarization timed out."}
-        return
-    except Exception as e:
-        print("Unknown error while summarizing:", e)
-        status_data = {"status": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": "Summarization error."}
-        return
-    finally:
-        asyncio.create_task(analysisManager.broadcast(status_data, media_id))
-
-    analysis_info['summary'] = summarize.get('summarization', {}).get('response', '')
-    analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
-    status_data = {"status": status.HTTP_201_CREATED, "message": "Summarization done."}
-    asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
 
 def is_media_file(file: UploadFile):

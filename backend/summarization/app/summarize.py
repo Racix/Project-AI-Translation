@@ -11,7 +11,7 @@ set_global_tokenizer(
 )
 import torch
 import gc
-import llama_cpp
+import re 
 
 def load_data(file_path: str):
     with open(file_path, 'r') as file:
@@ -51,6 +51,10 @@ def messages_to_prompt(messages):
   prompt = prompt + "<|im_start|>assistant\n"
 
   return prompt
+
+def post_processing(response):
+   cleaned_text = re.sub(r'\[.*?\]', '', response)
+   return cleaned_text
   
 
 def create_summarize(file_path: str):
@@ -78,11 +82,10 @@ def create_summarize(file_path: str):
 
         query_engine = list_index.as_query_engine(response_mode="tree_summarize")
         response = query_engine.query("Summarize in detail.")
-        return response
+        return post_processing(response)
     except Exception as e:
        print(e)
     finally:
-        llama_cpp.llama_free_model(llm)
         del llm
         del service_context
         del list_index

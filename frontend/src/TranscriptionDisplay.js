@@ -49,7 +49,7 @@ function TranscriptionDisplay() {
 
   useEffect(() => {
     fetchFileContent();
-  }, [BASE_URL, data, selectedLanguage]);
+  }, [selectedLanguage]);
 
   const fetchFileContent = async () => {
     if (testing) {

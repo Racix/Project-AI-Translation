@@ -29,7 +29,7 @@ function Upload() {
 
   useEffect(() => {
     fetchFileList();
-  }, [BASE_URL]);
+  }, [fileList, data]);
 
   const fetchFileList = async () => {
     try {
@@ -208,8 +208,7 @@ function Upload() {
       });
 
       if (response.ok) {
-        alert("File uploaded successfully!");
-        window.location.reload(); // Reload the entire page
+        alert("File is being uploaded!");
       } else {
         alert("Error uploading file!");
       }

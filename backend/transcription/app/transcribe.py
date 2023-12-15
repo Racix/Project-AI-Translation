@@ -6,7 +6,8 @@ import torch
 
 def transcribe(file_path: str) -> dict:
     try:         
-        MODEL_NAME = "openai/whisper-large-v2"
+        start_time = time.time()
+        MODEL_NAME = "openai/whisper-medium"
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
         whisper_pipeline = pipeline(
@@ -41,6 +42,7 @@ def transcribe(file_path: str) -> dict:
             "detected_language": detected_language,
             "segments": transcription_data,            
         }
+        print(f"Transcription of {file_path} finished. Total time: {str(time.time() - start_time)}")
         return result_dict
     except Exception as e:
         print(traceback.format_exc())

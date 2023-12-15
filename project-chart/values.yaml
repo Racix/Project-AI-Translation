@@ -16,7 +16,7 @@ service:
 
 api:
   repository: tonytonfisk/api
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: api
   port: 8080
@@ -31,7 +31,7 @@ database:
 
 transcription:
   repository: tonytonfisk/transcription
-  tag: "latest"
+  tag: "pipeline-medium"
   pullPolicy: Always
   name: "transcription"
   port: 8081
@@ -52,14 +52,14 @@ translation:
 
 summarization:
   repository: tonytonfisk/summarization
-  tag: "latest2"
+  tag: "latest"
   pullPolicy: Always
   name: summarization
   port: 8084
 
 live_transcription:
   repository: tonytonfisk/livetranscription
-  tag: "base32"
+  tag: "base"
   pullPolicy: Always
   name: livetranscript
   port: 8085
