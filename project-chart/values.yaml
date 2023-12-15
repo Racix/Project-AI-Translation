@@ -25,13 +25,13 @@ api:
 database:
   repository: mongo
   tag: "latest"
-  pullPolicy: IfNotPresentcd
+  pullPolicy: IfNotPresent
   name: db
   port: 27017
 
 transcription:
   repository: tonytonfisk/transcription
-  tag: "pipeline-medium"
+  tag: "pipeline-medium2"
   pullPolicy: Always
   name: "transcription"
   port: 8081
