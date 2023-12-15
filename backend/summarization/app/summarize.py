@@ -54,7 +54,8 @@ def messages_to_prompt(messages):
 
 def post_processing(response):
    print(type(response))
-   cleaned_text = re.sub(r'\[.*?\]', '', str(response))
+   cleaned_text = re.sub(r'\[.*?\]', '', response)
+   print(cleaned_text)
    return cleaned_text
   
 
@@ -83,7 +84,10 @@ def create_summarize(file_path: str):
 
         query_engine = list_index.as_query_engine(response_mode="tree_summarize")
         response = query_engine.query("Summarize in detail.")
-        return post_processing(response)
+        print(response)
+        text_response = str(response)
+        print(text_response)
+        return post_processing(text_response)
     except Exception as e:
        print(e)
     finally:
