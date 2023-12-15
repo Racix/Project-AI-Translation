@@ -52,7 +52,7 @@ translation:
 
 summarization:
   repository: tonytonfisk/summarization
-  tag: "latest2"
+  tag: "latest3"
   pullPolicy: Always
   name: summarization
   port: 8084
