@@ -53,7 +53,8 @@ def messages_to_prompt(messages):
   return prompt
 
 def post_processing(response):
-   cleaned_text = re.sub(r'\[.*?\]', '', response)
+   print(type(response))
+   cleaned_text = re.sub(r'\[.*?\]', '', str(response))
    return cleaned_text
   
 
