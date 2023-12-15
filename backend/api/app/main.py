@@ -365,7 +365,7 @@ async def do_summary(file_path: str, media_id: str):
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-    print(summarize.get('summarization'))
+    print(summarize)
     analysis_info['summary'] = summarize.get('summarization', {})
     analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
     status_data = {"status": status.HTTP_201_CREATED, "message": "Summarization done."}
