@@ -330,7 +330,7 @@ async def start_media_summary(media_id: str, background_tasks: BackgroundTasks):
 
 
 async def do_summary(file_path: str, media_id: str):
-    timeout_seconds = 300
+    timeout_seconds = 900
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
     summarize = {}

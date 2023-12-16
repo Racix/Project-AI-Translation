@@ -29,8 +29,5 @@ async def transcribe_media_file(json_data: str = Form(...)):
         print(f"An error occurred: {e}", file=sys.stderr)
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Summarization error")
-    finally:
-        # empty cache
-        torch.cuda.empty_cache()
-        gc.collect()
+
     return {"summarization": res}
