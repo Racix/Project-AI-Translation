@@ -347,7 +347,7 @@ async def do_summary(file_path: str, media_id: str):
                 form_new.add_field('json_data', json.dumps(analysis_info), content_type='application/json')
                 form_new.add_field('file', file)
 
-                async with aiohttp.request('POST', summarize_url, data=form_new) as response:
+                async with session.request('POST', summarize_url, data=form_new) as response:
                     if response.status == status.HTTP_201_CREATED:
                         summarize = await response.json()
                         status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
@@ -365,7 +365,6 @@ async def do_summary(file_path: str, media_id: str):
     finally:
         asyncio.create_task(analysisManager.broadcast(status_data, media_id))
 
-    print(summarize)
     analysis_info['summary'] = summarize.get('summarization', {})
     analysis_col.update_one({"media_id": ObjectId(media_id)}, {"$set": {"summary": analysis_info['summary']}})
     status_data = {"status": status.HTTP_201_CREATED, "message": "Summarization done."}

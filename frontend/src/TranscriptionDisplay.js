@@ -49,7 +49,7 @@ function TranscriptionDisplay() {
 
   useEffect(() => {
     fetchFileContent();
-  }, [BASE_URL, selectedLanguage]);
+  }, [selectedLanguage]);
 
   const fetchFileContent = async () => {
     if (testing) {
@@ -189,6 +189,7 @@ function TranscriptionDisplay() {
       }
       setSummaryVisible(true)
       setIsDisabled(false);
+      window.location.reload();
     };
 
     return () => {
@@ -312,7 +313,7 @@ function TranscriptionDisplay() {
                       onClick={() => setSummaryVisible(!summaryVisible)}
                       className="summary-button blue-button"
                     >
-                      Summary
+                      Show Summary
                     </button>
                   )
                 : ( // If false, check if there is transcription

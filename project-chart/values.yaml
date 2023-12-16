@@ -16,7 +16,7 @@ service:
 
 api:
   repository: tonytonfisk/api
-  tag: "latest2"
+  tag: "latest"
   pullPolicy: Always
   name: api
   port: 8080
@@ -45,7 +45,7 @@ diarization:
 
 translation:
   repository: tonytonfisk/translation
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: translation
   port: 8083
