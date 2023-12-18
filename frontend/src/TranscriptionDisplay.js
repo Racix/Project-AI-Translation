@@ -190,6 +190,7 @@ function TranscriptionDisplay() {
       }
       setSummaryVisible(true)
       setIsDisabled(false);
+      window.location.reload();
     };
 
     return () => {
