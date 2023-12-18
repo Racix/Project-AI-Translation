@@ -71,7 +71,7 @@ function TranscriptionDisplay() {
       }
 
       let response = await fetch(endpoint);
-      if (!response.ok && selectedLanguage!==originalLanguage) {
+      if (!response.ok && selectedLanguage && selectedLanguage!==originalLanguage) {
         const userResponse = window.confirm("No translation found of , do you want to start a translation? (this might take some time)");
 
         if (userResponse) {
@@ -81,6 +81,7 @@ function TranscriptionDisplay() {
         } else {
           // User clicked "Cancel"
           console.log("User clicked Cancel");
+          setSelectedLanguage("")
           return;
         }
         response = await fetch(endpoint,
@@ -324,7 +325,7 @@ function TranscriptionDisplay() {
                           Summarize
                         </button>
                       ) : (
-                        data && <div className="message-field">{data.message}</div>
+                        data && <div className="message-field summary-button blue-button">{data.message}</div>
                       )
                     )
                 )
