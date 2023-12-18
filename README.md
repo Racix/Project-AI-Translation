@@ -14,3 +14,10 @@ To delete the cluster write
 ```helm uninstall name```
 
 If you do not have a GKE cluster with a GPU attached node. Then visit the main branch to learn how to run it locally with docker.
+
+The cluster should have atleast a Nvidia T4 with 24gb RAM.
+
+
+
+
+
