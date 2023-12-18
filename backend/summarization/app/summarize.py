@@ -74,7 +74,7 @@ def create_summarize(file_path: str):
   completion_to_prompt=completion_to_prompt,
   verbose=True,
 )
-  service_context = ServiceContext.from_defaults(llm=llm, embed_model="local:BAAI/bge-base-en-v1.5", context_window = 3700)
+  service_context = ServiceContext.from_defaults(llm=llm, embed_model="local:BAAI/bge-base-en-v1.5", chunk_size = 1024)
   list_index = ListIndex.from_documents(documents, service_context=service_context)
 
   query_engine = list_index.as_query_engine(response_mode="tree_summarize")
