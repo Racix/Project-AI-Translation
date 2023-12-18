@@ -24,7 +24,7 @@ async def translate_analysis_file(request: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Translate error")
     finally:
         torch.cuda.empty_cache()
-        gc.collect
+        gc.collect()
 
     
     return {"translation": translation}
