@@ -6,7 +6,7 @@ replicaCount: 1
 
 frontend:
   repository: tonytonfisk/frontend
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: frontend
   port: 80
@@ -45,14 +45,14 @@ diarization:
 
 translation:
   repository: tonytonfisk/translation
-  tag: "latest2"
+  tag: "latest"
   pullPolicy: Always
   name: translation
   port: 8083
 
 summarization:
   repository: tonytonfisk/summarization
-  tag: "latest"
+  tag: "latest2"
   pullPolicy: Always
   name: summarization
   port: 8084

@@ -78,7 +78,7 @@ def create_summarize(file_path: str):
   list_index = ListIndex.from_documents(documents, service_context=service_context)
 
   query_engine = list_index.as_query_engine(response_mode="tree_summarize")
-  response = query_engine.query("Summarize in detail.")
+  response = query_engine.query("Give a concise summary of the whole text")
   text_response = str(response)
   result = post_processing(text_response)
   return result

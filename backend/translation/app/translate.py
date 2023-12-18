@@ -28,7 +28,7 @@ def translate_to_lang(data: dict, from_language: str, to_language: str) -> dict:
     if from_language not in language_codes:
         translation =  "Not a viable language"
         return translation
-    elif from_language != "en":
+    elif from_language != "en" and to_language != "en":
         install_language(from_language, "en")
         whole_text_translated = translate_json(data, from_language, "en")
         install_language("en", to_language)
