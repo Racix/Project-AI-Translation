@@ -1,10 +1,12 @@
-from llama_index import ListIndex, SimpleDirectoryReader, ServiceContext
+from llama_index import ListIndex, SimpleDirectoryReader, ServiceContext, set_global_tokenizer
 from llama_index.llms import LlamaCPP
 from llama_index.llms.llama_utils import (
     completion_to_prompt,
 )
 import json, tempfile, os
-
+set_global_tokenizer(
+    AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1").encode
+)
 def load_data(file_path: str):
     with open(file_path, 'r') as file:
         json_data = file.read()

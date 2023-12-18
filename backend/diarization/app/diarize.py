@@ -39,7 +39,7 @@ def configurations(wav_path: str, domain: str, rttm: str | None, speakers: int =
     pretrained_msdd = "models/diar_msdd_telephonic.nemo"
     config.diarizer.manifest_filepath = input_manifest_path
     # config.device = device
-    config.batch_size = 1
+    config.batch_size = 8
     config.diarizer.out_dir = ut.OUTPUT_DIR # Directory to store intermediate files and prediction outputs
     config.diarizer.speaker_embeddings.model_path = pretrained_speaker_model
     config.diarizer.msdd_model.model_path = pretrained_msdd  
@@ -67,6 +67,15 @@ def msdd_diarization(config: OmegaConf):
 
 
 def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
-    config = configurations(file_path, "telephonic", rttm, speakers)
+    domain = ""
+    if speakers is not None:
+        if speakers > 2:
+            domain = "meeting" #used for when there are 3+ ppl in the audio file
+        else:
+            domain = "telephonic" #used for when its 2 ppl in the audio file
+    else:
+        domain = "telephonic"
+        
+    config = configurations(file_path, domain, rttm, speakers)
     #cluster_diarization(config)
     msdd_diarization(config)

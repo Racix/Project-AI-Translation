@@ -330,7 +330,7 @@ async def start_media_summary(media_id: str, background_tasks: BackgroundTasks):
 
 
 async def do_summary(file_path: str, media_id: str):
-    timeout_seconds = 300
+    timeout_seconds = 600
     session_timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     summarize_url = f"http://{os.environ['SUMMARIZATION_ADDRESS']}:{os.environ['API_PORT_GUEST']}/summarize"
     summarize = {}
@@ -347,7 +347,7 @@ async def do_summary(file_path: str, media_id: str):
                 form_new.add_field('json_data', json.dumps(analysis_info), content_type='application/json')
                 form_new.add_field('file', file)
 
-                async with aiohttp.request('POST', summarize_url, data=form_new) as response:
+                async with session.request('POST', summarize_url, data=form_new) as response:
                     if response.status == status.HTTP_201_CREATED:
                         summarize = await response.json()
                         status_data = {"status": status.HTTP_200_OK, "message": "Summarization done."}
