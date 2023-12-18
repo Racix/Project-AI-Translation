@@ -70,9 +70,9 @@ def create_diarization(file_path: str, rttm: str | None, speakers: int = None):
     domain = ""
     if speakers is not None:
         if speakers > 2:
-            domain = "meeting"
+            domain = "meeting" #used for when there are 3+ ppl in the audio file
         else:
-            domain = "telephonic"
+            domain = "telephonic" #used for when its 2 ppl in the audio file
     else:
         domain = "telephonic"
         
