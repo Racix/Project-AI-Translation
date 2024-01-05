@@ -49,6 +49,7 @@ We are a group of 8 students from Luleå University of Technology in Sweden that
 
 - Running with Kubernetes and Helm
  Use the build scripts from above to create the images, helm to deploy.
+See the [README](https://github.com/Racix/Project-AI-Translation/tree/rebased-kubernetes?tab=readme-ov-file) in the rebased-kubernetes branch for instrcutions.
 
 
  - Running live-transcription: 
