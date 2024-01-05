@@ -49,9 +49,9 @@ We are a group of 8 students from Luleå University of Technology in Sweden that
 
 - Running with Kubernetes and Helm
 
-    See the [README](https://github.com/Racix/Project-AI-Translation/tree/rebased-kubernetes) in the rebased-kubernetes branch for instrcutions.
+    See the [README](https://github.com/Racix/Project-AI-Translation/tree/rebased-kubernetes) in the rebased-kubernetes branch for instructions.
 
 
  - Running live-transcription: 
 
-   See the [README](https://github.com/Racix/Project-AI-Translation/tree/main/sound_driver) in the sound_driver folder for instrcutions.
+   See the [README](https://github.com/Racix/Project-AI-Translation/tree/main/sound_driver) in the sound_driver folder for instructions.
