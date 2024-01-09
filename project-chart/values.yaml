@@ -6,7 +6,7 @@ replicaCount: 1
 
 frontend:
   repository: tonytonfisk/frontend
-  tag: "latest2"
+  tag: "latestIP"
   pullPolicy: Always
   name: frontend
   port: 80
